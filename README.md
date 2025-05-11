@@ -41,7 +41,7 @@ This Telegram bot monitors the live status page of a website hosted on a Nintend
    composer install
    ```
 
-3. **Configure your Telegram bot token in the `$botToken` variable and the initial administrator Telegram User IDs in the `$adminIds` array within the `wiim.php` file.**
+3. Configure your Telegram bot token in the `$botToken` variable and the initial administrator Telegram User IDs in the `$adminIds` array within the `wiim.php` file. **Note:** It is highly recommended to manage most settings through the bot's admin interface after the initial setup.
 
 4. Initialize the SQLite database: The database (`bot_config.db`) will be automatically created and populated with default settings when you run the bot for the first time.
 
