@@ -6,11 +6,9 @@
  * It checks for timestamp changes and captures screenshots of the monitored site.
  */
 
-declare(strict_types=1);
-
 // Error reporting for debugging
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
 // Configuration
@@ -55,8 +53,10 @@ $messages = [
 
 /**
  * Initialize database with default settings
+ * @param string $dbFile
+ * @return SQLite3
  */
-function initDatabase(string $dbFile) : SQLite3
+function initDatabase($dbFile)
 {
     $db = new SQLite3($dbFile);
 
@@ -97,8 +97,10 @@ function initDatabase(string $dbFile) : SQLite3
 
 /**
  * Get all settings from database
+ * @param SQLite3 $db
+ * @return array
  */
-function getAllSettings(SQLite3 $db) : array
+function getAllSettings($db)
 {
     $result = $db->query('SELECT key, value, description FROM settings');
     $settings = [];
@@ -115,8 +117,11 @@ function getAllSettings(SQLite3 $db) : array
 
 /**
  * Get a specific setting value
+ * @param SQLite3 $db
+ * @param string $key
+ * @return string|null
  */
-function getSetting(SQLite3 $db, string $key) : ?string
+function getSetting($db, $key)
 {
     $stmt = $db->prepare('SELECT value FROM settings WHERE key = :key');
     $stmt->bindValue(':key', $key, SQLITE3_TEXT);
@@ -131,8 +136,12 @@ function getSetting(SQLite3 $db, string $key) : ?string
 
 /**
  * Update a setting value
+ * @param SQLite3 $db
+ * @param string $key
+ * @param string $value
+ * @return bool
  */
-function updateSetting(SQLite3 $db, string $key, string $value) : bool
+function updateSetting($db, $key, $value)
 {
     $stmt = $db->prepare('UPDATE settings SET value = :value WHERE key = :key');
     $stmt->bindValue(':key', $key, SQLITE3_TEXT);
@@ -143,8 +152,13 @@ function updateSetting(SQLite3 $db, string $key, string $value) : bool
 
 /**
  * Send message via Telegram API
+ * @param string $botToken
+ * @param int $chatId
+ * @param string $text
+ * @param string|null $keyboard
+ * @return mixed
  */
-function sendTelegramMessage(string $botToken, int $chatId, string $text, ?string $keyboard = null) : mixed
+function sendTelegramMessage($botToken, $chatId, $text, $keyboard = null)
 {
     $url = "https://api.telegram.org/bot{$botToken}/sendMessage";
 
@@ -176,16 +190,20 @@ function sendTelegramMessage(string $botToken, int $chatId, string $text, ?strin
 
 /**
  * Check if user is admin
+ * @param int $userId
+ * @param array $adminIds
+ * @return bool
  */
-function isAdmin(int $userId, array $adminIds) : bool
+function isAdmin($userId, $adminIds)
 {
     return in_array($userId, $adminIds);
 }
 
 /**
  * Create main admin keyboard
+ * @return string
  */
-function createAdminKeyboard() : string
+function createAdminKeyboard()
 {
     return json_encode([
         'keyboard' => [
@@ -200,8 +218,9 @@ function createAdminKeyboard() : string
 
 /**
  * Create screenshot settings keyboard
+ * @return string
  */
-function createScreenshotSettingsKeyboard() : string
+function createScreenshotSettingsKeyboard()
 {
     return json_encode([
         'keyboard' => [
@@ -215,8 +234,10 @@ function createScreenshotSettingsKeyboard() : string
 
 /**
  * Create settings keyboard
+ * @param array $settings
+ * @return string
  */
-function createSettingsKeyboard(array $settings) : string
+function createSettingsKeyboard($settings)
 {
     $keyboard = [[]];
     $i = 0;
@@ -240,8 +261,11 @@ function createSettingsKeyboard(array $settings) : string
 
 /**
  * Calculate wait time until next check
+ * @param bool $initialCheck
+ * @param SQLite3 $db
+ * @return int
  */
-function waitUntilNextHalfHour(bool $initialCheck, SQLite3 $db) : int
+function waitUntilNextHalfHour($initialCheck, $db)
 {
     $now = time();
     $next = strtotime(date('Y-m-d H:00')) + (date('i') < 30 ? 1800 : 3600);
@@ -258,8 +282,10 @@ function waitUntilNextHalfHour(bool $initialCheck, SQLite3 $db) : int
 
 /**
  * Fetch generation timestamp from the page
+ * @param string $url
+ * @return string|false
  */
-function fetchGeneratedOn(string $url) : string|false
+function fetchGeneratedOn($url)
 {
     $page = @file_get_contents($url);
     if (! $page) {
@@ -290,8 +316,12 @@ function fetchGeneratedOn(string $url) : string|false
 
 /**
  * Convert timestamp between timezones
+ * @param string $timestampStr
+ * @param string $fromTz
+ * @param string $toTz
+ * @return string
  */
-function convertTimezone(string $timestampStr, string $fromTz, string $toTz) : string
+function convertTimezone($timestampStr, $fromTz, $toTz)
 {
     try {
         if (preg_match('/^\w{3} \w{3} \d{1,2} \d{2}:\d{2}:\d{2} UTC \d{4}$/', $timestampStr)) {
@@ -333,8 +363,12 @@ function convertTimezone(string $timestampStr, string $fromTz, string $toTz) : s
 
 /**
  * Check if timestamp is recent
+ * @param string $timestampStr
+ * @param int $minutes
+ * @param SQLite3 $db
+ * @return bool
  */
-function isRecent(string $timestampStr, int $minutes, SQLite3 $db) : bool
+function isRecent($timestampStr, $minutes, $db)
 {
     $sourceTimezone = getSetting($db, 'source_timezone');
     try {
@@ -350,8 +384,11 @@ function isRecent(string $timestampStr, int $minutes, SQLite3 $db) : bool
 
 /**
  * Take screenshot of the target URL
+ * @param string $targetUrl
+ * @param SQLite3 $db
+ * @return string|false
  */
-function takeScreenshot(string $targetUrl, SQLite3 $db) : string|false
+function takeScreenshot($targetUrl, $db)
 {
     $screenshotKey = getSetting($db, 'screenshot_key');
     $url = 'https://api.screenshotone.com/take';
@@ -382,8 +419,12 @@ function takeScreenshot(string $targetUrl, SQLite3 $db) : string|false
 
 /**
  * Send screenshot to Telegram
+ * @param string $imagePath
+ * @param string $caption
+ * @param SQLite3 $db
+ * @return bool
  */
-function sendScreenshot(string $imagePath, string $caption, SQLite3 $db) : bool
+function sendScreenshot($imagePath, $caption, $db)
 {
     global $botToken;
     $chatId = getSetting($db, 'chat_id');
@@ -410,8 +451,11 @@ function sendScreenshot(string $imagePath, string $caption, SQLite3 $db) : bool
 
 /**
  * Process check logic
+ * @param SQLite3 $db
+ * @param bool $force
+ * @return bool
  */
-function processCheck(SQLite3 $db, bool $force = false) : bool
+function processCheck($db, $force = false)
 {
     echo '[ ' . date('H:i:s') . " ] Check started...\n";
 
@@ -484,8 +528,10 @@ function processCheck(SQLite3 $db, bool $force = false) : bool
 
 /**
  * Test check functionality
+ * @param SQLite3 $db
+ * @return string
  */
-function testCheck(SQLite3 $db) : string
+function testCheck($db)
 {
     $testResult = $GLOBALS['messages']['test_results'];
 
@@ -544,8 +590,13 @@ function testCheck(SQLite3 $db) : string
 
 /**
  * Process incoming update from Telegram
+ * @param array $update
+ * @param string $botToken
+ * @param array $adminIds
+ * @param SQLite3 $db
+ * @return void
  */
-function processUpdate(array $update, string $botToken, array $adminIds, SQLite3 $db) : void
+function processUpdate($update, $botToken, $adminIds, $db)
 {
     if (isset($update['message'])) {
         $message = $update['message'];
@@ -698,8 +749,11 @@ function processUpdate(array $update, string $botToken, array $adminIds, SQLite3
 
 /**
  * Get updates from Telegram API
+ * @param string $botToken
+ * @param int $offset
+ * @return array
  */
-function getUpdates(string $botToken, int $offset) : array
+function getUpdates($botToken, $offset)
 {
     $url = "https://api.telegram.org/bot{$botToken}/getUpdates?offset={$offset}&timeout=30";
     $response = file_get_contents($url);
