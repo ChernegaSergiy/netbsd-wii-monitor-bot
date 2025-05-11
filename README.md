@@ -53,7 +53,7 @@ This Telegram bot monitors the live status page of a website hosted on a Nintend
    php wiim.php
    ```
 
-### Configuration
+### Administrative Interface
 
 Most of the bot's configuration can be done through the administrative interface within Telegram. To access it, send the `/start` command to your bot as an authorized administrator (your Telegram User ID needs to be in the `$adminIds` array in the `wiim.php` file).
 
@@ -70,7 +70,12 @@ The following settings can be managed:
 - **Viewport Height:** The height (in pixels) of the virtual browser viewport used for taking screenshots.
 - **Image Quality:** The quality of the captured JPEG screenshot (1-100).
 
-### Contributing
+#### Screenshot of the Admin Panel
+
+![Telegram bot admin panel showing the main menu (left) and settings list (right)](assets/admin_panel.png)  
+*Telegram bot admin panel: view and manage bot settings via an intuitive inline keyboard interface*
+
+## Contributing
 
 Contributions are welcome and appreciated! Here's how you can contribute:
 
@@ -82,11 +87,11 @@ Contributions are welcome and appreciated! Here's how you can contribute:
 
 Please make sure to update tests as appropriate and adhere to the existing coding style.
 
-### License
+## License
 
 This project is licensed under the CSSM Unlimited License v2 (CSSM-ULv2). See the [LICENSE](LICENSE) file for details.
 
-### Acknowledgments
+## Acknowledgments
 
 - [Alex Haydock](https://github.com/alexhaydock) for the inspiring project of hosting a blog on a Nintendo Wii.
 - [Telegram Bot API](https://core.telegram.org/bots/api) for enabling bot functionality on Telegram.
