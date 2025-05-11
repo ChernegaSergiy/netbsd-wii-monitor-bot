@@ -23,7 +23,6 @@ This Telegram bot monitors the live status page of a website hosted on a Nintend
 - PHP 7.4 or higher with the following extensions enabled:
   - `curl`
   - `sqlite3`
-- Composer
 - A Telegram bot token (create one with [BotFather](https://t.me/BotFather))
 - An API key from [ScreenshotOne](https://screenshotone.com/) to capture website screenshots. You will need to sign up for an account to obtain an API key.
 
@@ -35,17 +34,11 @@ This Telegram bot monitors the live status page of a website hosted on a Nintend
    cd netbsd-wii-monitor-bot
    ```
 
-2. Install dependencies:
-   ```bash
-   composer require telegram-bot/api
-   composer install
-   ```
+2. Configure your Telegram bot token in the `$botToken` variable and the initial administrator Telegram User IDs in the `$adminIds` array within the `wiim.php` file. **Note:** It is highly recommended to keep sensitive information like bot tokens and API keys secure and not hardcode them directly into the source code.
 
-3. Configure your Telegram bot token in the `$botToken` variable and the initial administrator Telegram User IDs in the `$adminIds` array within the `wiim.php` file. **Note:** It is highly recommended to manage most settings through the bot's admin interface after the initial setup.
+3. Initialize the SQLite database: The database (`bot_config.db`) will be automatically created and populated with default settings when you run the bot for the first time.
 
-4. Initialize the SQLite database: The database (`bot_config.db`) will be automatically created and populated with default settings when you run the bot for the first time.
-
-5. Run the bot:
+4. Run the bot:
    ```bash
    php wiim.php
    ```
