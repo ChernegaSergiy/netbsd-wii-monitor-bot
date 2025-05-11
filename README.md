@@ -72,7 +72,7 @@ The following settings can be managed:
 ![Telegram bot admin panel showing the main menu (left) and settings list (right)](assets/admin_panel.png)  
 *Telegram bot admin panel: view and manage bot settings via an intuitive inline keyboard interface*
 
-### Contributing
+## Contributing
 
 Contributions are welcome and appreciated! Here's how you can contribute:
 
@@ -84,11 +84,11 @@ Contributions are welcome and appreciated! Here's how you can contribute:
 
 Please make sure to update tests as appropriate and adhere to the existing coding style.
 
-### License
+## License
 
 This project is licensed under the CSSM Unlimited License v2 (CSSM-ULv2). See the [LICENSE](LICENSE) file for details.
 
-### Acknowledgments
+## Acknowledgments
 
 - [Alex Haydock](https://github.com/alexhaydock) for the inspiring project of hosting a blog on a Nintendo Wii.
 - [Telegram Bot API](https://core.telegram.org/bots/api) for enabling bot functionality on Telegram.
