@@ -67,6 +67,11 @@ The following settings can be managed:
 - **Viewport Height:** The height (in pixels) of the virtual browser viewport used for taking screenshots.
 - **Image Quality:** The quality of the captured JPEG screenshot (1-100).
 
+#### Screenshot of the Admin Panel
+
+![Telegram bot admin panel showing the main menu (left) and settings list (right)](assets/admin_panel.png)  
+*Telegram bot admin panel: view and manage bot settings via an intuitive inline keyboard interface*
+
 ### Contributing
 
 Contributions are welcome and appreciated! Here's how you can contribute:
