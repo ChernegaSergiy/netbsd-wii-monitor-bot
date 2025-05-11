@@ -1,5 +1,8 @@
 # NetBSD Wii Status Monitor Telegram Bot
 
+> [!WARNING]
+> This branch of the repository for PHP 7.3.10 is deprecated and will no longer receive updates. It is created solely to run on older Linux distributions.
+
 This Telegram bot monitors the live status page of a website hosted on a Nintendo Wii running NetBSD, as described in [Alex Haydock's blog post](https://blog.infected.systems/posts/2025-04-21-this-blog-is-hosted-on-a-nintendo-wii). The bot periodically checks for updates, captures a screenshot of the status page, and sends it to a specified Telegram channel. It also provides an administrative interface within Telegram for managing the bot's settings.
 
 ## Features
@@ -20,7 +23,7 @@ This Telegram bot monitors the live status page of a website hosted on a Nintend
 
 ### Prerequisites
 
-- PHP 7.4 or higher with the following extensions enabled:
+- PHP 7.4 or higher **(or PHP 7.3 for legacy support)** with the following extensions enabled:
   - `curl`
   - `sqlite3`
 - Composer
