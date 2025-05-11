@@ -32,8 +32,16 @@ This Telegram bot monitors the live status page of a website hosted on a Nintend
 ### Installation
 
 1. Clone the repository:
+
+   For PHP 7.4 or higher:
    ```bash
    git clone https://github.com/ChernegaSergiy/netbsd-wii-monitor-bot.git
+   cd netbsd-wii-monitor-bot
+   ```
+
+   For PHP 7.3 support:
+   ```bash
+   git clone --branch legacy-php-7.3 https://github.com/ChernegaSergiy/netbsd-wii-monitor-bot.git
    cd netbsd-wii-monitor-bot
    ```
 
