@@ -47,18 +47,13 @@ This Telegram bot monitors the live status page of a website hosted on a Nintend
    composer install
    ```
 
-4. Set up the Puppeteer screenshot server:
+4. Set up and start the Puppeteer screenshot server:
    ```bash
-   # Create and enter the puppeteer-server directory
-   mkdir puppeteer-server
+   # Enter the puppeteer-server directory
    cd puppeteer-server
 
-   # Initialize Node.js project and install dependencies
-   npm init -y
-   npm install express puppeteer
-
-   # Copy the Puppeteer server file
-   cp ../puppeteer-server.js .
+   # Install dependencies
+   npm install
 
    # Start the Puppeteer server
    node puppeteer-server.js
