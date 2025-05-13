@@ -1,0 +1,13 @@
+{
+  "name": "wiim-puppeteer-server",
+  "version": "1.0.0",
+  "description": "Screenshot server for NetBSD Wii Monitor Bot",
+  "main": "puppeteer-server.js",
+  "scripts": {
+    "start": "node puppeteer-server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "puppeteer": "^21.0.0"
+  }
+}
