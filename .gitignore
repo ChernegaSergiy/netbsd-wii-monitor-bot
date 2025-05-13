@@ -1,0 +1,20 @@
+# Environment variables
+.env
+
+# Dependencies
+/vendor/
+/puppeteer-server/node_modules/
+
+# Database
+*.db
+
+# Runtime files
+*.log
+last_gen.txt
+screenshot.jpg
+test_screenshot.jpg
+
+# IDE and OS files
+.DS_Store
+.idea/
+.vscode/
