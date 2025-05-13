@@ -23,6 +23,7 @@ This Telegram bot monitors the live status page of a website hosted on a Nintend
 - PHP 7.4 or higher with the following extensions enabled:
   - `curl`
   - `sqlite3`
+- Composer
 - A Telegram bot token (create one with [BotFather](https://t.me/BotFather))
 - An API key from [ScreenshotOne](https://screenshotone.com/) to capture website screenshots. You will need to sign up for an account to obtain an API key.
 
