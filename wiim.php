@@ -89,10 +89,10 @@ function initDatabase(string $dbFile) : SQLite3
         'source_timezone' => ['UTC', 'Source timezone'],
         'target_timezone' => ['Europe/Kiev', 'Target timezone'],
         'check_interval' => ['1800', 'Check interval in seconds'],
-        'screenshot_key' => ['abcdef1234567890abcdef', 'Screenshot API key'],
         'viewport_width' => ['1280', 'Screenshot width in pixels'],
         'viewport_height' => ['720', 'Screenshot height in pixels'],
         'image_quality' => ['80', 'Screenshot quality (1-100)'],
+        'puppeteer_server' => ['http://localhost:3000', 'Puppeteer server URL'],
     ];
 
     // Initialize settings
@@ -361,35 +361,45 @@ function isRecent(string $timestampStr, int $minutes, SQLite3 $db) : bool
 }
 
 /**
- * Take screenshot of the target URL
+ * Take screenshot of the target URL using Puppeteer server
  */
 function takeScreenshot(string $targetUrl, SQLite3 $db) : string|false
 {
-    $screenshotKey = getSetting($db, 'screenshot_key');
-    $url = 'https://api.screenshotone.com/take';
-    $query = [
-        'access_key' => $screenshotKey,
-        'url' => $targetUrl,
-        'format' => 'jpg',
-        'block_cookie_banners' => 'true',
-        'block_trackers' => 'true',
-        'timeout' => '60',
-        'image_quality' => getSetting($db, 'image_quality'),
-        'viewport_width' => getSetting($db, 'viewport_width'),
-        'viewport_height' => getSetting($db, 'viewport_height'),
-        'delay' => '5',
-    ];
-    $url .= '?' . http_build_query($query);
+    $puppeteerServer = getSetting($db, 'puppeteer_server');
+    $viewportWidth = getSetting($db, 'viewport_width');
+    $viewportHeight = getSetting($db, 'viewport_height');
+    $imageQuality = getSetting($db, 'image_quality');
 
-    $options = [
-        'http' => [
-            'method' => 'GET',
+    $data = [
+        'url' => $targetUrl,
+        'viewport' => [
+            'width' => (int) $viewportWidth,
+            'height' => (int) $viewportHeight,
+            'quality' => (int) $imageQuality,
         ],
     ];
 
-    $context = stream_context_create($options);
+    $ch = curl_init($puppeteerServer . '/screenshot');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode($data),
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_TIMEOUT => 90, // Increased timeout for screenshot generation
+    ]);
 
-    return file_get_contents($url, false, $context);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error = curl_error($ch);
+    curl_close($ch);
+
+    if ($error || 200 !== $httpCode) {
+        error_log('Screenshot error: ' . ($error ?: "HTTP $httpCode"));
+
+        return false;
+    }
+
+    return $response;
 }
 
 /**
