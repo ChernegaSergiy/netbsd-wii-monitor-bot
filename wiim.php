@@ -8,15 +8,27 @@
 
 declare(strict_types=1);
 
+require_once 'vendor/autoload.php'; // Load libraries via Composer
+use Dotenv\Dotenv;
+
 // Error reporting for debugging
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+// Load environment variables
+$dotenv = Dotenv::createImmutable(__DIR__);
+$dotenv->load();
+
 // Configuration
-$botToken = '1234567890:ABC-DEF1234ghIJKL-1234567890MNOPQR';
-$adminIds = [123456789];
-$dbFile = 'bot_config.db';
+$botToken = getenv('BOT_TOKEN');
+$adminIds = explode(',', getenv('ADMIN_IDS'));
+$dbFile = getenv('DB_FILE') ?: 'bot_config.db';
+
+// Check if all required environment variables are set
+if (! $botToken || empty($adminIds)) {
+    exit("Error! Missing required configuration variables.\n");
+}
 
 $messages = [
     'welcome_admin' => 'Welcome to the bot admin panel! Please select an action:',
