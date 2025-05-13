@@ -34,11 +34,20 @@ This Telegram bot monitors the live status page of a website hosted on a Nintend
    cd netbsd-wii-monitor-bot
    ```
 
-2. Configure your Telegram bot token in the `$botToken` variable and the initial administrator Telegram User IDs in the `$adminIds` array within the `wiim.php` file. **Note:** It is highly recommended to keep sensitive information like bot tokens and API keys secure and not hardcode them directly into the source code.
+2. Create an `.env` file in the root directory:
+   ```bash
+   cp .env.example .env
+   ```
+   Fill in the necessary values, such as your Telegram bot token.
 
-3. Initialize the SQLite database: The database (`bot_config.db`) will be automatically created and populated with default settings when you run the bot for the first time.
+3. Install dependencies using Composer:
+   ```bash
+   composer install
+   ```
 
-4. Run the bot:
+4. Initialize the SQLite database: The database (`bot_config.db`) will be automatically created and populated with default settings when you run the bot for the first time.
+
+5. Run the bot:
    ```bash
    php wiim.php
    ```
