@@ -5,11 +5,11 @@ This Telegram bot monitors the live status page of a website hosted on a Nintend
 ## Features
 
 - **Automated Monitoring:** Periodically checks the target website for updates based on a timestamp.
-- **Screenshot Capture:** Takes a screenshot of the status page using the [ScreenshotOne API](https://screenshotone.com/).
+- **Screenshot Capture:** Takes a screenshot of the status page using Puppeteer, which can be run locally or on a remote server.
 - **Telegram Notifications:** Sends a message with the captured screenshot to a designated Telegram channel whenever a new update is detected.
 - **Administrative Interface:** Provides a Telegram-based interface for administrators to:
   - View current bot settings.
-  - Edit various settings (check URL, chat ID, API keys, timezone settings, screenshot dimensions and quality, check interval).
+  - Edit various settings (check URL, chat ID, Puppeteer server URL, timezone settings, screenshot dimensions and quality, check interval).
   - Manually trigger a test of the bot's functionality.
   - Force an immediate check of the website.
 - **Configuration via Database:** Uses an SQLite database to store and manage bot settings, allowing for easy modification without code changes.
@@ -24,8 +24,9 @@ This Telegram bot monitors the live status page of a website hosted on a Nintend
   - `curl`
   - `sqlite3`
 - Composer
+- Node.js 14 or higher (for Puppeteer server)
+- npm (Node.js package manager)
 - A Telegram bot token (create one with [BotFather](https://t.me/BotFather))
-- An API key from [ScreenshotOne](https://screenshotone.com/) to capture website screenshots. You will need to sign up for an account to obtain an API key.
 
 ### Installation
 
@@ -46,9 +47,27 @@ This Telegram bot monitors the live status page of a website hosted on a Nintend
    composer install
    ```
 
-4. Initialize the SQLite database: The database (`bot_config.db`) will be automatically created and populated with default settings when you run the bot for the first time.
+4. Set up the Puppeteer screenshot server:
+   ```bash
+   # Create and enter the puppeteer-server directory
+   mkdir puppeteer-server
+   cd puppeteer-server
 
-5. Run the bot:
+   # Initialize Node.js project and install dependencies
+   npm init -y
+   npm install express puppeteer
+
+   # Copy the Puppeteer server file
+   cp ../puppeteer-server.js .
+
+   # Start the Puppeteer server
+   node puppeteer-server.js
+   ```
+   The Puppeteer server will run on port 3000 by default. You can change this by setting the `PORT` environment variable.
+
+5. Initialize the SQLite database: The database (`bot_config.db`) will be automatically created and populated with default settings when you run the bot for the first time.
+
+6. Run the bot:
    ```bash
    php wiim.php
    ```
@@ -65,7 +84,7 @@ The following settings can be managed:
 - **Source Timezone:** The timezone of the timestamp on the monitored website (e.g., `UTC`).
 - **Target Timezone:** The timezone to which the timestamp should be converted in notifications (e.g., `Europe/Kiev`).
 - **Check Interval:** The frequency (in seconds) at which the website should be checked for updates.
-- **Screenshot Key:** Your API key from [ScreenshotOne](https://screenshotone.com/).
+- **Puppeteer Server:** The URL where your Puppeteer screenshot server is running (e.g., `http://localhost:3000` for local setup).
 - **Viewport Width:** The width (in pixels) of the virtual browser viewport used for taking screenshots.
 - **Viewport Height:** The height (in pixels) of the virtual browser viewport used for taking screenshots.
 - **Image Quality:** The quality of the captured JPEG screenshot (1-100).
@@ -74,6 +93,30 @@ The following settings can be managed:
 
 ![Telegram bot admin panel showing the main menu (left) and settings list (right)](assets/admin_panel.png)  
 *Telegram bot admin panel: view and manage bot settings via an intuitive inline keyboard interface*
+
+### Running in Production
+
+When running in a production environment, consider the following:
+
+1. Run the Puppeteer server with PM2 or similar process manager:
+   ```bash
+   npm install -g pm2
+   pm2 start puppeteer-server.js
+   ```
+
+2. Use a reverse proxy (like Nginx) to secure the Puppeteer server:
+   ```nginx
+   location /puppeteer/ {
+       proxy_pass http://localhost:3000/;
+       proxy_http_version 1.1;
+       proxy_set_header Upgrade $http_upgrade;
+       proxy_set_header Connection 'upgrade';
+       proxy_set_header Host $host;
+       proxy_cache_bypass $http_upgrade;
+   }
+   ```
+
+3. Consider running the Puppeteer server in a Docker container for better isolation.
 
 ## Contributing
 
@@ -95,5 +138,5 @@ This project is licensed under the CSSM Unlimited License v2 (CSSM-ULv2). See th
 
 - [Alex Haydock](https://github.com/alexhaydock) for the inspiring project of hosting a blog on a Nintendo Wii.
 - [Telegram Bot API](https://core.telegram.org/bots/api) for enabling bot functionality on Telegram.
-- [ScreenshotOne API](https://screenshotone.com/) for providing the service used to capture website screenshots.
+- [Puppeteer](https://pptr.dev/) for providing the powerful browser automation tool used to capture website screenshots.
 - Special thanks to the open-source community for their contributions and support.
