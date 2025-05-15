@@ -120,5 +120,5 @@ This project is licensed under the CSSM Unlimited License v2 (CSSM-ULv2). See th
 
 - [Alex Haydock](https://github.com/alexhaydock) for the inspiring project of hosting a blog on a Nintendo Wii.
 - [Telegram Bot API](https://core.telegram.org/bots/api) for enabling bot functionality on Telegram.
-- [ScreenshotOne API](https://screenshotone.com/) for providing the service used to capture website screenshots.
+- [Puppeteer](https://pptr.dev/) for providing the powerful browser automation tool used to capture website screenshots.
 - Special thanks to the open-source community for their contributions and support.
