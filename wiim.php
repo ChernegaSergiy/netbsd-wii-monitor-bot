@@ -402,31 +402,41 @@ function isRecent($timestampStr, $minutes, $db)
  */
 function takeScreenshot($targetUrl, $db)
 {
-    $screenshotKey = getSetting($db, 'screenshot_key');
-    $url = 'https://api.screenshotone.com/take';
-    $query = [
-        'access_key' => $screenshotKey,
-        'url' => $targetUrl,
-        'format' => 'jpg',
-        'block_cookie_banners' => 'true',
-        'block_trackers' => 'true',
-        'timeout' => '60',
-        'image_quality' => getSetting($db, 'image_quality'),
-        'viewport_width' => getSetting($db, 'viewport_width'),
-        'viewport_height' => getSetting($db, 'viewport_height'),
-        'delay' => '5',
-    ];
-    $url .= '?' . http_build_query($query);
+    $puppeteerServer = getSetting($db, 'puppeteer_server');
+    $viewportWidth = getSetting($db, 'viewport_width');
+    $viewportHeight = getSetting($db, 'viewport_height');
+    $imageQuality = getSetting($db, 'image_quality');
 
-    $options = [
-        'http' => [
-            'method' => 'GET',
+    $data = [
+        'url' => $targetUrl,
+        'viewport' => [
+            'width' => (int) $viewportWidth,
+            'height' => (int) $viewportHeight,
+            'quality' => (int) $imageQuality,
         ],
     ];
 
-    $context = stream_context_create($options);
+    $ch = curl_init($puppeteerServer . '/screenshot');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode($data),
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_TIMEOUT => 90,
+    ]);
 
-    return file_get_contents($url, false, $context);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error = curl_error($ch);
+    curl_close($ch);
+
+    if ($error || 200 !== $httpCode) {
+        error_log('Screenshot error: ' . ($error ?: "HTTP $httpCode"));
+
+        return false;
+    }
+
+    return $response;
 }
 
 /**
