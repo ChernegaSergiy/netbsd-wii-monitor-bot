@@ -547,18 +547,20 @@ function testCheck(SQLite3 $db) : string
         $testResult .= $GLOBALS['messages']['screenshot_captured'] . "\n";
         $imagePath = 'test_screenshot.jpg';
         file_put_contents($imagePath, $imageData);
+
+        // Test notification
+        $testCaption = 'Test Notification';
+        $success = sendScreenshot($imagePath, $testCaption, $db);
+        if ($success) {
+            $testResult .= $GLOBALS['messages']['test_notification_sent'] . "\n";
+        } else {
+            $testResult .= $GLOBALS['messages']['test_notification_failed'] . "\n";
+        }
+
+        // Delete the file after sending
         unlink($imagePath);
     } else {
         $testResult .= $GLOBALS['messages']['screenshot_failed'] . "\n";
-    }
-
-    // Test notification
-    $testCaption = 'Test Notification';
-    $success = sendScreenshot('test_screenshot.jpg', $testCaption, $db);
-    if ($success) {
-        $testResult .= $GLOBALS['messages']['test_notification_sent'] . "\n";
-    } else {
-        $testResult .= $GLOBALS['messages']['test_notification_failed'] . "\n";
     }
 
     return $testResult;
