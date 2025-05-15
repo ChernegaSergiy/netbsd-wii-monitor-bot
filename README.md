@@ -69,7 +69,12 @@ This Telegram bot monitors the live status page of a website hosted on a Nintend
 
 ### Administrative Interface
 
-Most of the bot's configuration can be done through the administrative interface within Telegram. To access it, send the `/start` command to your bot as an authorized administrator (your Telegram User ID needs to be in the `$adminIds` array in the `wiim.php` file).
+Most of the bot's configuration can be done through the administrative interface within Telegram. To access it, send the `/start` command to your bot as an authorized administrator. 
+
+You need to specify your Telegram User ID in the `ADMIN_IDS` variable of the `.env` file, separated by commas for multiple administrators. For example:
+```env
+ADMIN_IDS=123456789,987654321
+```
 
 The following settings can be managed:
 
