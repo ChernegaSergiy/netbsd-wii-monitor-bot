@@ -8,11 +8,11 @@ This Telegram bot monitors the live status page of a website hosted on a Nintend
 ## Features
 
 - **Automated Monitoring:** Periodically checks the target website for updates based on a timestamp.
-- **Screenshot Capture:** Takes a screenshot of the status page using the [ScreenshotOne API](https://screenshotone.com/).
+- **Screenshot Capture:** Takes a screenshot of the status page using Puppeteer, which can be run locally or on a remote server.
 - **Telegram Notifications:** Sends a message with the captured screenshot to a designated Telegram channel whenever a new update is detected.
 - **Administrative Interface:** Provides a Telegram-based interface for administrators to:
   - View current bot settings.
-  - Edit various settings (check URL, chat ID, API keys, timezone settings, screenshot dimensions and quality, check interval).
+  - Edit various settings (check URL, chat ID, Puppeteer server URL, timezone settings, screenshot dimensions and quality, check interval).
   - Manually trigger a test of the bot's functionality.
   - Force an immediate check of the website.
 - **Configuration via Database:** Uses an SQLite database to store and manage bot settings, allowing for easy modification without code changes.
@@ -26,8 +26,10 @@ This Telegram bot monitors the live status page of a website hosted on a Nintend
 - PHP 7.4 or higher **(or PHP 7.3 for legacy support)** with the following extensions enabled:
   - `curl`
   - `sqlite3`
+- Composer
+- Node.js 14 or higher (for Puppeteer server)
+- npm (Node.js package manager)
 - A Telegram bot token (create one with [BotFather](https://t.me/BotFather))
-- An API key from [ScreenshotOne](https://screenshotone.com/) to capture website screenshots. You will need to sign up for an account to obtain an API key.
 
 ### Installation
 
@@ -45,11 +47,33 @@ This Telegram bot monitors the live status page of a website hosted on a Nintend
    cd netbsd-wii-monitor-bot
    ```
 
-2. Configure your Telegram bot token in the `$botToken` variable and the initial administrator Telegram User IDs in the `$adminIds` array within the `wiim.php` file. **Note:** It is highly recommended to keep sensitive information like bot tokens and API keys secure and not hardcode them directly into the source code.
+2. Create an `.env` file in the root directory:
+   ```bash
+   cp .env.example .env
+   ```
+   Fill in the necessary values, such as your Telegram bot token.
 
-3. Initialize the SQLite database: The database (`bot_config.db`) will be automatically created and populated with default settings when you run the bot for the first time.
+3. Install dependencies using Composer:
+   ```bash
+   composer install
+   ```
 
-4. Run the bot:
+4. Set up and start the Puppeteer screenshot server:
+   ```bash
+   # Enter the puppeteer-server directory
+   cd puppeteer-server
+
+   # Install dependencies
+   npm install
+
+   # Start the Puppeteer server
+   node puppeteer-server.js
+   ```
+   The Puppeteer server will run on port 3000 by default. You can change this by setting the `PORT` environment variable.
+
+5. Initialize the SQLite database: The database (`bot_config.db`) will be automatically created and populated with default settings when you run the bot for the first time.
+
+6. Run the bot:
    ```bash
    php wiim.php
    ```
@@ -66,7 +90,7 @@ The following settings can be managed:
 - **Source Timezone:** The timezone of the timestamp on the monitored website (e.g., `UTC`).
 - **Target Timezone:** The timezone to which the timestamp should be converted in notifications (e.g., `Europe/Kiev`).
 - **Check Interval:** The frequency (in seconds) at which the website should be checked for updates.
-- **Screenshot Key:** Your API key from [ScreenshotOne](https://screenshotone.com/).
+- **Puppeteer Server:** The URL where your Puppeteer screenshot server is running (e.g., `http://localhost:3000` for local setup).
 - **Viewport Width:** The width (in pixels) of the virtual browser viewport used for taking screenshots.
 - **Viewport Height:** The height (in pixels) of the virtual browser viewport used for taking screenshots.
 - **Image Quality:** The quality of the captured JPEG screenshot (1-100).
