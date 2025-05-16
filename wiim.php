@@ -398,45 +398,52 @@ function isRecent($timestampStr, $minutes, $db)
  * Take screenshot of the target URL
  * @param string $targetUrl
  * @param SQLite3 $db
+ * @param int $maxRetries
  * @return string|false
  */
-function takeScreenshot($targetUrl, $db)
+function takeScreenshot($targetUrl, $db, $maxRetries = 3)
 {
-    $puppeteerServer = getSetting($db, 'puppeteer_server');
-    $viewportWidth = getSetting($db, 'viewport_width');
-    $viewportHeight = getSetting($db, 'viewport_height');
-    $imageQuality = getSetting($db, 'image_quality');
+    for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+        $puppeteerServer = getSetting($db, 'puppeteer_server');
+        $viewportWidth = getSetting($db, 'viewport_width');
+        $viewportHeight = getSetting($db, 'viewport_height');
+        $imageQuality = getSetting($db, 'image_quality');
 
-    $data = [
-        'url' => $targetUrl,
-        'viewport' => [
-            'width' => (int) $viewportWidth,
-            'height' => (int) $viewportHeight,
-            'quality' => (int) $imageQuality,
-        ],
-    ];
+        $data = [
+            'url' => $targetUrl,
+            'viewport' => [
+                'width' => (int) $viewportWidth,
+                'height' => (int) $viewportHeight,
+                'quality' => (int) $imageQuality,
+            ],
+        ];
 
-    $ch = curl_init($puppeteerServer . '/screenshot');
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => json_encode($data),
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        CURLOPT_TIMEOUT => 90,
-    ]);
+        $ch = curl_init($puppeteerServer . '/screenshot');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($data),
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+            CURLOPT_TIMEOUT => 90,
+        ]);
 
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $error = curl_error($ch);
-    curl_close($ch);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
 
-    if ($error || 200 !== $httpCode) {
-        error_log('Screenshot error: ' . ($error ?: "HTTP $httpCode"));
+        if (! $error && 200 === $httpCode) {
+            return $response;
+        }
 
-        return false;
+        error_log("Screenshot attempt $attempt failed: " . ($error ?: "HTTP $httpCode"));
+
+        if ($attempt < $maxRetries) {
+            sleep(10); // Wait 10 seconds before retrying
+        }
     }
 
-    return $response;
+    return false;
 }
 
 /**
@@ -780,7 +787,25 @@ function processUpdate($update, $botToken, $adminIds, $db)
 function getUpdates($botToken, $offset)
 {
     $url = "https://api.telegram.org/bot{$botToken}/getUpdates?offset={$offset}&timeout=30";
-    $response = file_get_contents($url);
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_TIMEOUT => 35,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_SSL_VERIFYHOST => 2,
+    ]);
+
+    $response = curl_exec($ch);
+    $error = curl_error($ch);
+    curl_close($ch);
+
+    if ($error) {
+        error_log("Telegram API error: $error");
+
+        return [];
+    }
 
     return json_decode($response, true) ?? [];
 }
