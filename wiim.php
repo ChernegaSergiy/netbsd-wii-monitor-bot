@@ -269,17 +269,61 @@ function waitUntilNextHalfHour(bool $initialCheck, SQLite3 $db) : int
 }
 
 /**
- * Fetch generation timestamp from the page
+ * Get combined data (page content and screenshot) from Puppeteer server
  */
-function fetchGeneratedOn(string $url) : string|false
+function getCombinedData(string $url, SQLite3 $db, int $maxRetries = 3) : array|false
 {
-    $page = @file_get_contents($url);
-    if (! $page) {
-        error_log("Could not fetch page from URL: $url");
+    for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+        $puppeteerServer = getSetting($db, 'puppeteer_server');
+        $viewportWidth = getSetting($db, 'viewport_width');
+        $viewportHeight = getSetting($db, 'viewport_height');
+        $imageQuality = getSetting($db, 'image_quality');
 
-        return false;
+        $data = [
+            'url' => $url,
+            'viewport' => [
+                'width' => (int) $viewportWidth,
+                'height' => (int) $viewportHeight,
+                'quality' => (int) $imageQuality,
+            ],
+        ];
+
+        $ch = curl_init($puppeteerServer . '/combined');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($data),
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+            CURLOPT_TIMEOUT => 90,
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if (! $error && 200 === $httpCode) {
+            $result = json_decode($response, true);
+            if ($result && isset($result['content']) && isset($result['screenshot'])) {
+                return $result;
+            }
+        }
+
+        error_log("Combined request attempt $attempt failed: " . ($error ?: "HTTP $httpCode"));
+
+        if ($attempt < $maxRetries) {
+            sleep(10); // Wait 10 seconds before retrying
+        }
     }
 
+    return false;
+}
+
+/**
+ * Fetch generation timestamp from the page content
+ */
+function fetchGeneratedOn(string $content) : string|false
+{
     $patterns = [
         '/Generated on:\s+([^\n<]+)/',
         '/Generated:\s+([^\n<]+)/',
@@ -287,7 +331,7 @@ function fetchGeneratedOn(string $url) : string|false
     ];
 
     foreach ($patterns as $pattern) {
-        if (preg_match($pattern, $page, $match)) {
+        if (preg_match($pattern, $content, $match)) {
             $timestamp = trim($match[1]);
             error_log("Found timestamp: $timestamp");
 
@@ -431,9 +475,23 @@ function sendScreenshot(string $imagePath, string $caption, SQLite3 $db) : bool
     ]);
 
     $response = curl_exec($curl);
+    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
 
-    return false !== $response;
+    if (false === $response) {
+        error_log('Telegram API request failed: curl error');
+
+        return false;
+    }
+
+    $result = json_decode($response, true);
+    if (! $result || ! isset($result['ok']) || true !== $result['ok']) {
+        error_log('Telegram API error: ' . ($result['description'] ?? 'Unknown error'));
+
+        return false;
+    }
+
+    return true;
 }
 
 /**
@@ -448,18 +506,18 @@ function processCheck(SQLite3 $db, bool $force = false) : bool
     $sourceTimezone = getSetting($db, 'source_timezone');
     $targetTimezone = getSetting($db, 'target_timezone');
 
-    // Try to fetch timestamp multiple times if needed
-    $generatedOn = false;
-    for ($i = 0; $i < 12; $i++) {
-        $generatedOn = fetchGeneratedOn($checkUrl);
-        if ($generatedOn) {
-            break;
-        }
-        sleep(10);
+    // Get combined data from Puppeteer server
+    $data = getCombinedData($checkUrl, $db);
+    if (! $data) {
+        echo "Failed to get data from Puppeteer server.\n";
+
+        return false;
     }
 
+    // Extract timestamp from content
+    $generatedOn = fetchGeneratedOn($data['content']);
     if (! $generatedOn) {
-        echo "Generation timestamp not found within grace period.\n";
+        echo "Generation timestamp not found in page content.\n";
 
         return false;
     }
@@ -487,27 +545,27 @@ function processCheck(SQLite3 $db, bool $force = false) : bool
     echo "Original timestamp: {$generatedOn}\n";
     echo "Converted timestamp: {$convertedTime}\n";
 
-    // Take and send screenshot
-    $imageData = takeScreenshot($checkUrl, $db);
-    if (! $imageData) {
-        echo "Screenshot download failed.\n";
-
-        return false;
-    }
-
+    // Save and send screenshot
     $imagePath = 'screenshot.jpg';
-    file_put_contents($imagePath, $imageData);
+    if (file_put_contents($imagePath, base64_decode($data['screenshot']))) {
+        $caption = sprintf("New NetBSD Wii build:\nUTC: %s\nLocal: %s",
+            $generatedOn,
+            $convertedTime
+        );
 
-    $caption = sprintf("New NetBSD Wii build:\nUTC: %s\nLocal: %s", $generatedOn, $convertedTime);
-    $success = sendScreenshot($imagePath, $caption, $db);
+        $success = sendScreenshot($imagePath, $caption, $db);
+        if ($success) {
+            echo "Screenshot sent with timestamp {$convertedTime}\n";
+        } else {
+            echo "Failed to send screenshot\n";
+        }
 
-    if ($success) {
-        echo "Screenshot sent with timestamp {$convertedTime}\n";
-    } else {
-        echo "Failed to send screenshot\n";
+        return $success;
     }
 
-    return $success;
+    echo "Failed to save screenshot.\n";
+
+    return false;
 }
 
 /**
@@ -517,56 +575,54 @@ function testCheck(SQLite3 $db) : string
 {
     $testResult = $GLOBALS['messages']['test_results'];
 
-    // Test page access
+    // Test page access and get data
     $checkUrl = getSetting($db, 'check_url');
-    $page = @file_get_contents($checkUrl);
-    if ($page) {
+    $data = getCombinedData($checkUrl, $db);
+
+    if ($data) {
         $testResult .= $GLOBALS['messages']['page_accessible'] . "\n";
-    } else {
-        $testResult .= $GLOBALS['messages']['page_not_accessible'] . "\n";
-    }
 
-    // Test timestamp extraction
-    $generatedOn = fetchGeneratedOn($checkUrl);
-    if ($generatedOn) {
-        $testResult .= sprintf($GLOBALS['messages']['timestamp_found'], $generatedOn) . "\n";
+        // Test timestamp extraction
+        $generatedOn = fetchGeneratedOn($data['content']);
+        if ($generatedOn) {
+            $testResult .= sprintf($GLOBALS['messages']['timestamp_found'], $generatedOn) . "\n";
 
-        // Test timezone conversion
-        $sourceTimezone = getSetting($db, 'source_timezone');
-        $targetTimezone = getSetting($db, 'target_timezone');
-        $convertedTime = convertTimezone($generatedOn, $sourceTimezone, $targetTimezone);
+            // Test timezone conversion
+            $sourceTimezone = getSetting($db, 'source_timezone');
+            $targetTimezone = getSetting($db, 'target_timezone');
+            $convertedTime = convertTimezone($generatedOn, $sourceTimezone, $targetTimezone);
 
-        if ($convertedTime !== $generatedOn &&
-            false === strpos($convertedTime, 'conversion error') &&
-            false === strpos($convertedTime, 'conversion failed')) {
-            $testResult .= sprintf($GLOBALS['messages']['timestamp_found'], $convertedTime) . "\n";
+            if ($convertedTime !== $generatedOn &&
+                false === strpos($convertedTime, 'conversion error') &&
+                false === strpos($convertedTime, 'conversion failed')) {
+                $testResult .= sprintf($GLOBALS['messages']['timestamp_found'], $convertedTime) . "\n";
+            } else {
+                $testResult .= sprintf($GLOBALS['messages']['timezone_conversion_failed'], $convertedTime) . "\n";
+            }
         } else {
-            $testResult .= sprintf($GLOBALS['messages']['timezone_conversion_failed'], $convertedTime) . "\n";
+            $testResult .= $GLOBALS['messages']['timestamp_not_found'] . "\n";
         }
-    } else {
-        $testResult .= $GLOBALS['messages']['timestamp_not_found'] . "\n";
-    }
 
-    // Test screenshot capture
-    $imageData = takeScreenshot($checkUrl, $db);
-    if ($imageData) {
+        // Test screenshot
         $testResult .= $GLOBALS['messages']['screenshot_captured'] . "\n";
         $imagePath = 'test_screenshot.jpg';
-        file_put_contents($imagePath, $imageData);
+        if (file_put_contents($imagePath, base64_decode($data['screenshot']))) {
+            // Test notification
+            $testCaption = 'Test Notification';
+            $success = sendScreenshot($imagePath, $testCaption, $db);
+            if ($success) {
+                $testResult .= $GLOBALS['messages']['test_notification_sent'] . "\n";
+            } else {
+                $testResult .= $GLOBALS['messages']['test_notification_failed'] . "\n";
+            }
 
-        // Test notification
-        $testCaption = 'Test Notification';
-        $success = sendScreenshot($imagePath, $testCaption, $db);
-        if ($success) {
-            $testResult .= $GLOBALS['messages']['test_notification_sent'] . "\n";
+            // Delete the test file
+            unlink($imagePath);
         } else {
-            $testResult .= $GLOBALS['messages']['test_notification_failed'] . "\n";
+            $testResult .= $GLOBALS['messages']['screenshot_failed'] . "\n";
         }
-
-        // Delete the file after sending
-        unlink($imagePath);
     } else {
-        $testResult .= $GLOBALS['messages']['screenshot_failed'] . "\n";
+        $testResult .= $GLOBALS['messages']['page_not_accessible'] . "\n";
     }
 
     return $testResult;
