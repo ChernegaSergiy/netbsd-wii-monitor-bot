@@ -25,9 +25,9 @@ $dotenv = Dotenv::createImmutable(__DIR__ . '/..');
 $dotenv->load();
 
 // Configuration
-$botToken = getenv('BOT_TOKEN');
-$adminIds = explode(',', getenv('ADMIN_IDS'));
-$dbFile = getenv('DB_FILE') ?: 'bot_config.db';
+$botToken = $_ENV['BOT_TOKEN'];
+$adminIds = explode(',', $_ENV['ADMIN_IDS']);
+$dbFile = $_ENV['DB_FILE'] ?? 'bot_config.db';
 
 // Check required configuration
 if (! $botToken || empty($adminIds)) {
