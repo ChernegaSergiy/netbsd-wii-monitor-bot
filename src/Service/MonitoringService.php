@@ -16,6 +16,8 @@ class MonitoringService
 
     private TimestampService $timestampService;
 
+    private ConsoleLogger $logger;
+
     public function __construct(
         DatabaseInterface $db,
         WebClientInterface $webClient,
@@ -26,11 +28,12 @@ class MonitoringService
         $this->webClient = $webClient;
         $this->telegramClient = $telegramClient;
         $this->timestampService = $timestampService;
+        $this->logger = new ConsoleLogger;
     }
 
     public function processCheck(bool $force = false) : bool
     {
-        echo '[ ' . date('H:i:s') . " ] Check started...\n";
+        $this->logger->info('Starting check process...');
 
         $checkUrl = $this->db->getSetting('check_url');
         $cacheFile = $this->db->getSetting('cache_file');
@@ -44,33 +47,41 @@ class MonitoringService
         ];
 
         // Get combined data
+        $this->logger->info('Fetching data from web client...');
         $data = $this->webClient->getCombinedData($checkUrl, $viewportSettings);
+
         if (! $data) {
-            echo "Failed to get data from web client.\n";
+            $this->logger->error('Failed to get data from web client');
 
             return false;
         }
+
+        $this->logger->success('Data received successfully');
 
         // Extract timestamp
+        $this->logger->info('Extracting timestamp...');
         $generatedOn = $this->timestampService->fetchGeneratedOn($data['content']);
+
         if (! $generatedOn) {
-            echo "Generation timestamp not found in page content.\n";
+            $this->logger->error('Generation timestamp not found in page content');
 
             return false;
         }
+
+        $this->logger->success('Timestamp extracted: ' . $generatedOn);
 
         $lastGen = @file_get_contents($cacheFile);
 
         // Check if timestamp is recent and different
         if (! $force && ! $this->timestampService->isRecent($generatedOn, 30, $sourceTimezone) && $generatedOn !== $lastGen) {
             $convertedTime = $this->timestampService->convertTimezone($generatedOn, $sourceTimezone, $targetTimezone);
-            echo "Generation timestamp is not recent ({$convertedTime}), retrying in 5 minutes...\n";
+            $this->logger->warning("Generation timestamp is not recent ({$convertedTime}), will retry in 5 minutes");
 
             return false;
         }
 
         if ($generatedOn === $lastGen && ! $force) {
-            echo "No new generation.\n";
+            $this->logger->info('No new generation detected');
 
             return true;
         }
@@ -79,11 +90,13 @@ class MonitoringService
         file_put_contents($cacheFile, $generatedOn);
 
         $convertedTime = $this->timestampService->convertTimezone($generatedOn, $sourceTimezone, $targetTimezone);
-        echo "Original timestamp: {$generatedOn}\n";
-        echo "Converted timestamp: {$convertedTime}\n";
+        $this->logger->info("Original timestamp: {$generatedOn}");
+        $this->logger->info("Converted timestamp: {$convertedTime}");
 
         // Save and send screenshot
         $imagePath = 'screenshot.jpg';
+        $this->logger->info('Saving screenshot...');
+
         if (file_put_contents($imagePath, base64_decode($data['screenshot']))) {
             $caption = sprintf(
                 "New NetBSD Wii build:\nUTC: %s\nLocal: %s",
@@ -91,19 +104,20 @@ class MonitoringService
                 $convertedTime
             );
 
+            $this->logger->info('Sending screenshot to Telegram...');
             $chatId = (int) $this->db->getSetting('chat_id');
             $success = $this->telegramClient->sendPhoto($chatId, $imagePath, $caption);
 
             if ($success) {
-                echo "Screenshot sent with timestamp {$convertedTime}\n";
+                $this->logger->success("Screenshot sent with timestamp {$convertedTime}");
             } else {
-                echo "Failed to send screenshot\n";
+                $this->logger->error('Failed to send screenshot');
             }
 
             return $success;
         }
 
-        echo "Failed to save screenshot.\n";
+        $this->logger->error('Failed to save screenshot');
 
         return false;
     }
