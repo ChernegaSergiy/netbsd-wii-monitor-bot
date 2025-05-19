@@ -6,63 +6,48 @@ class ConsoleLogger
 {
     // ANSI Color codes
     private const COLORS = [
-        'reset' => "\033[0m",
-        'black' => "\033[30m",
-        'red' => "\033[31m",
-        'green' => "\033[32m",
-        'yellow' => "\033[33m",
-        'blue' => "\033[34m",
-        'magenta' => "\033[35m",
-        'cyan' => "\033[36m",
-        'white' => "\033[37m",
-        'brightBlack' => "\033[90m",
-        'brightRed' => "\033[91m",
-        'brightGreen' => "\033[92m",
-        'brightYellow' => "\033[93m",
-        'brightBlue' => "\033[94m",
-        'brightMagenta' => "\033[95m",
-        'brightCyan' => "\033[96m",
-        'brightWhite' => "\033[97m",
+        'info' => "\x1b[36m",    // cyan
+        'success' => "\x1b[32m", // green
+        'warning' => "\x1b[33m", // yellow
+        'error' => "\x1b[31m",   // red
+        'reset' => "\x1b[0m",
     ];
 
     public function info(string $message) : void
     {
-        $timestamp = $this->getTimestamp();
-        echo self::COLORS['brightBlue'] . '[INFO]' .
-             self::COLORS['blue'] . "[{$timestamp}] " .
-             self::COLORS['white'] . "{$message}" .
-             self::COLORS['reset'] . PHP_EOL;
+        $this->log($message, 'info');
     }
 
     public function success(string $message) : void
     {
-        $timestamp = $this->getTimestamp();
-        echo self::COLORS['brightGreen'] . '[SUCCESS]' .
-             self::COLORS['green'] . "[{$timestamp}] " .
-             self::COLORS['white'] . "{$message}" .
-             self::COLORS['reset'] . PHP_EOL;
+        $this->log($message, 'success');
     }
 
     public function error(string $message) : void
     {
-        $timestamp = $this->getTimestamp();
-        echo self::COLORS['brightRed'] . '[ERROR]' .
-             self::COLORS['red'] . "[{$timestamp}] " .
-             self::COLORS['white'] . "{$message}" .
-             self::COLORS['reset'] . PHP_EOL;
+        $this->log($message, 'error');
     }
 
     public function warning(string $message) : void
     {
+        $this->log($message, 'warning');
+    }
+
+    private function log(string $message, string $level) : void
+    {
         $timestamp = $this->getTimestamp();
-        echo self::COLORS['brightYellow'] . '[WARNING]' .
-             self::COLORS['yellow'] . "[{$timestamp}] " .
-             self::COLORS['white'] . "{$message}" .
-             self::COLORS['reset'] . PHP_EOL;
+        echo self::COLORS[$level] .
+             "[{$timestamp}] {$message}" .
+             self::COLORS['reset'] .
+             PHP_EOL;
     }
 
     private function getTimestamp() : string
     {
-        return date('Y-m-d H:i:s');
+        $micro = microtime(true);
+        $timestamp = date('Y-m-d\TH:i:', $micro);
+        $milliseconds = sprintf('%03d', ($micro - floor($micro)) * 1000);
+
+        return $timestamp . $milliseconds . 'Z';
     }
 }
