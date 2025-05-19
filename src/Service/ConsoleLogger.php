@@ -45,9 +45,15 @@ class ConsoleLogger
     private function getTimestamp() : string
     {
         $micro = microtime(true);
-        $timestamp = date('Y-m-d\TH:i:', $micro);
-        $milliseconds = sprintf('%03d', ($micro - floor($micro)) * 1000);
+        $milliseconds = round(($micro - floor($micro)) * 1000);
 
-        return $timestamp . $milliseconds . 'Z';
+        // Ensure milliseconds is always 3 digits
+        if ($milliseconds >= 1000) {
+            $milliseconds = 999;
+        }
+
+        return date('Y-m-d\TH:i:', (int) $micro) .
+               sprintf('%02d', date('s', (int) $micro)) . ':' .
+               sprintf('%03d', $milliseconds) . 'Z';
     }
 }
