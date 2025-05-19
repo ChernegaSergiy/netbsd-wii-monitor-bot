@@ -3,19 +3,25 @@
 namespace WiiMonitor\Client;
 
 use CURLFile;
+use WiiMonitor\Service\ConsoleLogger;
 use WiiMonitor\Interfaces\TelegramClientInterface;
 
 class TelegramClient implements TelegramClientInterface
 {
     private string $botToken;
 
+    private ConsoleLogger $logger;
+
     public function __construct(string $botToken)
     {
         $this->botToken = $botToken;
+        $this->logger = new ConsoleLogger;
     }
 
     public function sendMessage(int $chatId, string $text, ?string $keyboard = null) : mixed
     {
+        $this->logger->info("Sending message to chat ID: {$chatId}");
+
         $url = "https://api.telegram.org/bot{$this->botToken}/sendMessage";
 
         $postData = [
@@ -26,6 +32,7 @@ class TelegramClient implements TelegramClientInterface
 
         if (null !== $keyboard) {
             $postData['reply_markup'] = $keyboard;
+            $this->logger->info('Custom keyboard attached to message');
         }
 
         $ch = curl_init($url);
@@ -35,17 +42,43 @@ class TelegramClient implements TelegramClientInterface
 
         $response = curl_exec($ch);
         $error = curl_error($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
         if ($error) {
+            $this->logger->error("Failed to send message: {$error}");
+
             return false;
         }
 
-        return json_decode($response, true);
+        if (200 !== $httpCode) {
+            $this->logger->error("Message sending failed with HTTP code: {$httpCode}");
+
+            return false;
+        }
+
+        $result = json_decode($response, true);
+        if (! $result || ! isset($result['ok']) || true !== $result['ok']) {
+            $this->logger->error('Telegram API error: ' . ($result['description'] ?? 'Unknown error'));
+
+            return false;
+        }
+
+        $this->logger->success('Message sent successfully');
+
+        return $result;
     }
 
     public function sendPhoto(int $chatId, string $imagePath, string $caption) : bool
     {
+        $this->logger->info("Sending photo to chat ID: {$chatId}");
+
+        if (! file_exists($imagePath)) {
+            $this->logger->error("Image file not found: {$imagePath}");
+
+            return false;
+        }
+
         $url = "https://api.telegram.org/bot{$this->botToken}/sendPhoto";
         $curl = curl_init();
 
@@ -61,19 +94,38 @@ class TelegramClient implements TelegramClientInterface
         ]);
 
         $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $error = curl_error($curl);
         curl_close($curl);
 
-        if (false === $response) {
+        if ($error) {
+            $this->logger->error("CURL error while sending photo: {$error}");
+
+            return false;
+        }
+
+        if (200 !== $httpCode) {
+            $this->logger->error("Photo sending failed with HTTP code: {$httpCode}");
+
             return false;
         }
 
         $result = json_decode($response, true);
+        if (! $result || ! isset($result['ok']) || true !== $result['ok']) {
+            $this->logger->error('Telegram API error: ' . ($result['description'] ?? 'Unknown error'));
 
-        return $result && isset($result['ok']) && true === $result['ok'];
+            return false;
+        }
+
+        $this->logger->success('Photo sent successfully');
+
+        return true;
     }
 
     public function getUpdates(int $offset) : array
     {
+        $this->logger->info("Checking for updates from offset: {$offset}");
+
         $url = "https://api.telegram.org/bot{$this->botToken}/getUpdates?offset={$offset}&timeout=30";
 
         $ch = curl_init($url);
@@ -86,15 +138,36 @@ class TelegramClient implements TelegramClientInterface
         ]);
 
         $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error = curl_error($ch);
         curl_close($ch);
 
         if ($error) {
-            error_log("Telegram API error: $error");
+            $this->logger->error("Failed to get updates: {$error}");
 
             return [];
         }
 
-        return json_decode($response, true) ?? [];
+        if (200 !== $httpCode) {
+            $this->logger->error("Updates request failed with HTTP code: {$httpCode}");
+
+            return [];
+        }
+
+        $result = json_decode($response, true);
+        if (! $result) {
+            $this->logger->error('Invalid response from Telegram API');
+
+            return [];
+        }
+
+        if (! empty($result['result'])) {
+            $count = count($result['result']);
+            $this->logger->success("Received {$count} new update(s)");
+        } else {
+            $this->logger->info('No new updates');
+        }
+
+        return $result;
     }
 }
