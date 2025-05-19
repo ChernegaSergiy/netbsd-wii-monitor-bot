@@ -23,7 +23,6 @@ class TelegramClient implements TelegramClientInterface
         $this->logger->info("Sending message to chat ID: {$chatId}");
 
         $url = "https://api.telegram.org/bot{$this->botToken}/sendMessage";
-
         $postData = [
             'chat_id' => $chatId,
             'text' => $text,
@@ -32,7 +31,6 @@ class TelegramClient implements TelegramClientInterface
 
         if (null !== $keyboard) {
             $postData['reply_markup'] = $keyboard;
-            $this->logger->info('Custom keyboard attached to message');
         }
 
         $ch = curl_init($url);
@@ -42,17 +40,10 @@ class TelegramClient implements TelegramClientInterface
 
         $response = curl_exec($ch);
         $error = curl_error($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
         if ($error) {
             $this->logger->error("Failed to send message: {$error}");
-
-            return false;
-        }
-
-        if (200 !== $httpCode) {
-            $this->logger->error("Message sending failed with HTTP code: {$httpCode}");
 
             return false;
         }
@@ -73,16 +64,10 @@ class TelegramClient implements TelegramClientInterface
     {
         $this->logger->info("Sending photo to chat ID: {$chatId}");
 
-        if (! file_exists($imagePath)) {
-            $this->logger->error("Image file not found: {$imagePath}");
-
-            return false;
-        }
-
         $url = "https://api.telegram.org/bot{$this->botToken}/sendPhoto";
-        $curl = curl_init();
+        $ch = curl_init();
 
-        curl_setopt_array($curl, [
+        curl_setopt_array($ch, [
             CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
@@ -93,19 +78,12 @@ class TelegramClient implements TelegramClientInterface
             ],
         ]);
 
-        $response = curl_exec($curl);
-        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        $error = curl_error($curl);
-        curl_close($curl);
+        $response = curl_exec($ch);
+        $error = curl_error($ch);
+        curl_close($ch);
 
         if ($error) {
-            $this->logger->error("CURL error while sending photo: {$error}");
-
-            return false;
-        }
-
-        if (200 !== $httpCode) {
-            $this->logger->error("Photo sending failed with HTTP code: {$httpCode}");
+            $this->logger->error("Failed to send photo: {$error}");
 
             return false;
         }
@@ -124,11 +102,11 @@ class TelegramClient implements TelegramClientInterface
 
     public function getUpdates(int $offset) : array
     {
-        $this->logger->info("Checking for updates from offset: {$offset}");
+        $this->logger->info("Getting updates from offset: {$offset}");
 
         $url = "https://api.telegram.org/bot{$this->botToken}/getUpdates?offset={$offset}&timeout=30";
-
         $ch = curl_init($url);
+
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_SSL_VERIFYPEER => true,
@@ -138,7 +116,6 @@ class TelegramClient implements TelegramClientInterface
         ]);
 
         $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error = curl_error($ch);
         curl_close($ch);
 
@@ -148,24 +125,15 @@ class TelegramClient implements TelegramClientInterface
             return [];
         }
 
-        if (200 !== $httpCode) {
-            $this->logger->error("Updates request failed with HTTP code: {$httpCode}");
-
-            return [];
-        }
-
         $result = json_decode($response, true);
-        if (! $result) {
-            $this->logger->error('Invalid response from Telegram API');
+        if (! $result || ! isset($result['ok']) || true !== $result['ok']) {
+            $this->logger->error('Telegram API error: ' . ($result['description'] ?? 'Unknown error'));
 
             return [];
         }
 
         if (! empty($result['result'])) {
-            $count = count($result['result']);
-            $this->logger->success("Received {$count} new update(s)");
-        } else {
-            $this->logger->info('No new updates');
+            $this->logger->success('Received ' . count($result['result']) . ' update(s)');
         }
 
         return $result;
