@@ -177,8 +177,8 @@ function updateSetting($db, $key, $value)
  * @param  string  $bot_token
  * @param  int  $chat_id
  * @param  string  $text
- * @param  string|null  $keyboard
- * @return mixed Returns decoded JSON response or false on error.
+ * @param  array|null  $keyboard
+ * @return array|false
  */
 function sendTelegramMessage($bot_token, $chat_id, $text, $keyboard = null)
 {
@@ -191,7 +191,7 @@ function sendTelegramMessage($bot_token, $chat_id, $text, $keyboard = null)
     ];
 
     if (null !== $keyboard) {
-        $post_data['reply_markup'] = $keyboard;
+        $post_data['reply_markup'] = json_encode($keyboard, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
     $ch = curl_init($url);
@@ -219,8 +219,8 @@ function sendTelegramMessage($bot_token, $chat_id, $text, $keyboard = null)
  * @param  int  $chat_id
  * @param  int  $message_id
  * @param  string  $text
- * @param  string|null  $keyboard
- * @return mixed
+ * @param  array|null  $keyboard
+ * @return array|false
  */
 function editTelegramMessage($bot_token, $chat_id, $message_id, $text, $keyboard = null)
 {
@@ -234,7 +234,7 @@ function editTelegramMessage($bot_token, $chat_id, $message_id, $text, $keyboard
     ];
 
     if (null !== $keyboard) {
-        $post_data['reply_markup'] = $keyboard;
+        $post_data['reply_markup'] = json_encode($keyboard, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
     $ch = curl_init($url);
