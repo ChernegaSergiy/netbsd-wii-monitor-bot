@@ -190,7 +190,7 @@ function sendTelegramMessage($bot_token, $chat_id, $text, $keyboard = null)
         'parse_mode' => 'HTML',
     ];
 
-    if (null !== $keyboard) {
+    if ($keyboard !== null) {
         $post_data['reply_markup'] = json_encode($keyboard, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
@@ -940,9 +940,9 @@ function processUpdate($update, $bot_token, $admin_ids, $db)
                 break;
 
             case $GLOBALS['messages']['test']:
-                // Pass $chat_id to testCheck. testCheck will now handle message updates itself.
+                // Pass $chat_id to testCheck, which will now handle message updates itself
                 testCheck($db, $chat_id);
-                // No need to send another message here as testCheck already handles it.
+                // No need to send another message here as testCheck already handles it
                 break;
 
             case $GLOBALS['messages']['force_check']:
@@ -1043,7 +1043,25 @@ function processUpdate($update, $bot_token, $admin_ids, $db)
 function getUpdates($bot_token, $offset)
 {
     $url = "https://api.telegram.org/bot{$bot_token}/getUpdates?offset={$offset}&timeout=30";
-    $response = file_get_contents($url);
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_TIMEOUT => 35,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_SSL_VERIFYHOST => 2,
+    ]);
+
+    $response = curl_exec($ch);
+    $error = curl_error($ch);
+    curl_close($ch);
+
+    if ($error) {
+        error_log("Telegram API error: $error");
+
+        return [];
+    }
 
     return json_decode($response, true) ?? [];
 }
