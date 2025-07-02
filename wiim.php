@@ -190,7 +190,7 @@ function sendTelegramMessage($bot_token, $chat_id, $text, $keyboard = null)
         'parse_mode' => 'HTML',
     ];
 
-    if ($keyboard !== null) {
+    if (null !== $keyboard) {
         $post_data['reply_markup'] = json_encode($keyboard, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
