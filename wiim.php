@@ -511,45 +511,52 @@ function isRecent($timestamp_str, $minutes, $db)
  *
  * @param  string  $target_url
  * @param  SQLite3  $db
+ * @param  int  $max_retries
  * @return string|false
  */
-function takeScreenshot($target_url, $db)
+function takeScreenshot($target_url, $db, $max_retries = 3)
 {
-    $puppeteer_server = getSetting($db, 'puppeteer_server');
-    $viewport_width = getSetting($db, 'viewport_width');
-    $viewport_height = getSetting($db, 'viewport_height');
-    $image_quality = getSetting($db, 'image_quality');
+    for ($attempt = 1; $attempt <= $max_retries; $attempt++) {
+        $puppeteer_server = getSetting($db, 'puppeteer_server');
+        $viewport_width = getSetting($db, 'viewport_width');
+        $viewport_height = getSetting($db, 'viewport_height');
+        $image_quality = getSetting($db, 'image_quality');
 
-    $data = [
-        'url' => $target_url,
-        'viewport' => [
-            'width' => (int) $viewport_width,
-            'height' => (int) $viewport_height,
-            'quality' => (int) $image_quality,
-        ],
-    ];
+        $data = [
+            'url' => $target_url,
+            'viewport' => [
+                'width' => (int) $viewport_width,
+                'height' => (int) $viewport_height,
+                'quality' => (int) $image_quality,
+            ],
+        ];
 
-    $ch = curl_init($puppeteer_server . '/screenshot');
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => json_encode($data),
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        CURLOPT_TIMEOUT => 90,
-    ]);
+        $ch = curl_init($puppeteer_server . '/screenshot');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($data),
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+            CURLOPT_TIMEOUT => 90,
+        ]);
 
-    $response = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $error = curl_error($ch);
-    curl_close($ch);
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
 
-    if ($error || 200 !== $http_code) {
-        error_log('Screenshot error: ' . ($error ?: "HTTP $http_code"));
+        if (! $error && 200 === $http_code) {
+            return $response;
+        }
 
-        return false;
+        error_log("Screenshot attempt $attempt failed: " . ($error ?: "HTTP $http_code"));
+
+        if ($attempt < $max_retries) {
+            sleep(10); // Wait 10 seconds before retrying
+        }
     }
 
-    return $response;
+    return false;
 }
 
 /**
