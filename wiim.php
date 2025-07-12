@@ -204,14 +204,14 @@ function sendTelegramMessage($bot_token, $chat_id, $text, $keyboard = null)
     curl_close($ch);
 
     if ($error) {
-        error_log('ERROR: Telegram sendMessage curl error: ' . $error);
+        error_log('Telegram sendMessage curl error: ' . $error);
 
         return false;
     }
 
     $decoded_response = json_decode($response, true);
     if (! $decoded_response || ! isset($decoded_response['ok']) || true !== $decoded_response['ok']) {
-        error_log('ERROR: Telegram sendMessage API error: ' . ($decoded_response['description'] ?? 'Unknown API error'));
+        error_log('Telegram sendMessage API error: ' . ($decoded_response['description'] ?? 'Unknown API error'));
 
         return false;
     }
@@ -243,6 +243,18 @@ function editTelegramMessage($bot_token, $chat_id, $message_id, $text, $keyboard
     if (null !== $keyboard) {
         $post_data['reply_markup'] = json_encode($keyboard, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
+    $url = "https://api.telegram.org/bot{$bot_token}/editMessageText";
+
+    $post_data = [
+        'chat_id' => $chat_id,
+        'message_id' => $message_id,
+        'text' => $text,
+        'parse_mode' => 'HTML',
+    ];
+
+    if (null !== $keyboard) {
+        $post_data['reply_markup'] = json_encode($keyboard, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
 
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -255,14 +267,14 @@ function editTelegramMessage($bot_token, $chat_id, $message_id, $text, $keyboard
     curl_close($ch);
 
     if ($error) {
-        error_log('ERROR: Telegram editMessageText error: ' . $error);
+        error_log('Telegram editMessageText error: ' . $error);
 
         return false;
     }
 
     $decoded_response = json_decode($response, true);
     if (! $decoded_response || ! isset($decoded_response['ok']) || true !== $decoded_response['ok']) {
-        error_log('ERROR: Telegram editMessageText API error: ' . ($decoded_response['description'] ?? 'Unknown API error'));
+        error_log('Telegram editMessageText API error: ' . ($decoded_response['description'] ?? 'Unknown API error'));
 
         return false;
     }
