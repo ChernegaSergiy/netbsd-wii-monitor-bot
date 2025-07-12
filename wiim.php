@@ -39,7 +39,6 @@ $messages = [
     'select_setting' => 'Select a setting to edit:',
     'enter_value' => "Enter a new value for %s:\n\nCurrent value: <code>%s</code>\nDescription: <i>%s</i>",
     'setting_updated' => "✅ Setting <b>%s</b> updated successfully.\n\nNew value: <code>%s</code>",
-    'back_to_menu' => 'Back to main menu:',
     'test_results_header' => "📋 <b>Test Results:</b>\n\n",
     'test_starting' => '⚙️ Starting test. Please wait…',
     'page_accessible' => '✅ Page is accessible.',
@@ -53,21 +52,21 @@ $messages = [
     'test_notification_failed' => '❌ Failed to send test notification.',
     'check_completed' => '✅ Check completed successfully!',
     'check_failed' => '❌ Check failed.',
-    'screenshot_settings' => "📸 <b>Screenshot Settings</b>\n\nWidth: %spx\nHeight: %spx\nQuality: %s%%",
+    'screenshot_settings' => "📸 <b>Screenshot Settings:</b>\n\nWidth: %spx\nHeight: %spx\nQuality: %s%%",
     'enter_new_value' => 'Enter new value for %s (current: %s):',
     'please_select_action' => 'Please select an action:',
-    'show_settings' => '📊 Show Settings',
-    'edit_setting' => '⚙️ Edit Setting',
-    'test' => '📱 Test',
-    'force_check' => '📡 Force Check',
-    'screenshot_settings_menu' => '📸 Screenshot Settings',
-    'set_width' => '🖼️ Set Width',
-    'set_height' => '🖼️ Set Height',
-    'set_quality' => '🎚️ Set Quality',
-    'back_to_menu' => '◀️ Back to Menu',
-    'back_to_menu' => '◀️ Back to Menu',
     'initial_message_failed_fallback' => 'Failed to send initial message. Test completed without live updates.',
     'test_notification_caption' => 'Test Notification',
+    'back_to_menu_text' => 'Back to main menu:',
+    'btn_show_settings' => '📊 Show Settings',
+    'btn_edit_setting' => '⚙️ Edit Setting',
+    'btn_test' => '📱 Test',
+    'btn_force_check' => '📡 Force Check',
+    'btn_screenshot_settings_menu' => '📸 Screenshot Settings',
+    'btn_set_width' => '🖼️ Set Width',
+    'btn_set_height' => '🖼️ Set Height',
+    'btn_set_quality' => '🎚️ Set Quality',
+    'btn_back_to_menu' => '◀️ Back to Menu',
 ];
 
 /**
@@ -192,7 +191,7 @@ function sendTelegramMessage(string $bot_token, int $chat_id, string $text, ?arr
         'parse_mode' => 'HTML',
     ];
 
-    if ($keyboard !== null) {
+    if (null !== $keyboard) {
         $post_data['reply_markup'] = json_encode($keyboard, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
@@ -203,10 +202,18 @@ function sendTelegramMessage(string $bot_token, int $chat_id, string $text, ?arr
 
     $response = curl_exec($ch);
     $error = curl_error($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
     if ($error) {
-        error_log('Telegram sendMessage error: ' . $error);
+        error_log('Telegram sendMessage curl error: ' . $error);
+
+        return false;
+    }
+
+    $decoded_response = json_decode($response, true);
+    if (! $decoded_response || ! isset($decoded_response['ok']) || true !== $decoded_response['ok']) {
+        error_log('Telegram sendMessage API error: ' . ($decoded_response['description'] ?? 'Unknown API error'));
 
         return false;
     }
@@ -246,10 +253,18 @@ function editTelegramMessage(string $bot_token, int $chat_id, int $message_id, s
 
     $response = curl_exec($ch);
     $error = curl_error($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
     if ($error) {
         error_log('Telegram editMessageText error: ' . $error);
+
+        return false;
+    }
+
+    $decoded_response = json_decode($response, true);
+    if (! $decoded_response || ! isset($decoded_response['ok']) || true !== $decoded_response['ok']) {
+        error_log('Telegram editMessageText API error: ' . ($decoded_response['description'] ?? 'Unknown API error'));
 
         return false;
     }
@@ -272,45 +287,51 @@ function isAdmin(int $user_id, array $admin_ids) : bool
 /**
  * Create main admin keyboard
  *
- * @return string
+ * @return array
  */
-function createAdminKeyboard() : string
+function createAdminKeyboard() : array
 {
-    return json_encode([
+    return [
         'keyboard' => [
-            [['text' => $GLOBALS['messages']['show_settings']]],
-            [['text' => $GLOBALS['messages']['edit_setting']]],
-            [['text' => $GLOBALS['messages']['test']], ['text' => $GLOBALS['messages']['force_check']]],
-            [['text' => $GLOBALS['messages']['screenshot_settings_menu']]],
+            [['text' => $GLOBALS['messages']['btn_show_settings']]],
+            [['text' => $GLOBALS['messages']['btn_edit_setting']]],
+            [
+                ['text' => $GLOBALS['messages']['btn_test']],
+                ['text' => $GLOBALS['messages']['btn_force_check']],
+            ],
+            [['text' => $GLOBALS['messages']['btn_screenshot_settings_menu']]],
         ],
         'resize_keyboard' => true,
-    ]);
+    ];
 }
 
 /**
  * Create screenshot settings keyboard
  *
- * @return string
+ * @return array
  */
-function createScreenshotSettingsKeyboard() : string
+function createScreenshotSettingsKeyboard() : array
 {
-    return json_encode([
+    return [
         'keyboard' => [
-            [['text' => $GLOBALS['messages']['set_width']], ['text' => $GLOBALS['messages']['set_height']]],
-            [['text' => $GLOBALS['messages']['set_quality']]],
-            [['text' => $GLOBALS['messages']['back_to_menu']]],
+            [
+                ['text' => $GLOBALS['messages']['btn_set_width']],
+                ['text' => $GLOBALS['messages']['btn_set_height']],
+            ],
+            [['text' => $GLOBALS['messages']['btn_set_quality']]],
+            [['text' => $GLOBALS['messages']['btn_back_to_menu']]],
         ],
         'resize_keyboard' => true,
-    ]);
+    ];
 }
 
 /**
  * Create settings keyboard
  *
  * @param  array  $settings
- * @return string
+ * @return array
  */
-function createSettingsKeyboard(array $settings) : string
+function createSettingsKeyboard(array $settings) : array
 {
     $keyboard = [[]];
     $i = 0;
@@ -324,12 +345,12 @@ function createSettingsKeyboard(array $settings) : string
         $i++;
     }
 
-    $keyboard[] = [['text' => $GLOBALS['messages']['back_to_menu']]];
+    $keyboard[] = [['text' => $GLOBALS['messages']['btn_back_to_menu']]];
 
-    return json_encode([
+    return [
         'keyboard' => $keyboard,
         'resize_keyboard' => true,
-    ]);
+    ];
 }
 
 /**
@@ -927,7 +948,7 @@ function processUpdate(array $update, string $bot_token, array $admin_ids, SQLit
 
         // Handle commands
         switch ($text) {
-            case $GLOBALS['messages']['show_settings']:
+            case $GLOBALS['messages']['btn_show_settings']:
                 $settings = getAllSettings($db);
                 $response_text = $GLOBALS['messages']['current_settings'];
 
@@ -938,7 +959,7 @@ function processUpdate(array $update, string $bot_token, array $admin_ids, SQLit
                 sendTelegramMessage($bot_token, $chat_id, $response_text);
                 break;
 
-            case $GLOBALS['messages']['edit_setting']:
+            case $GLOBALS['messages']['btn_edit_setting']:
                 $settings = getAllSettings($db);
                 sendTelegramMessage(
                     $bot_token,
@@ -948,13 +969,13 @@ function processUpdate(array $update, string $bot_token, array $admin_ids, SQLit
                 );
                 break;
 
-            case $GLOBALS['messages']['test']:
+            case $GLOBALS['messages']['btn_test']:
                 // Pass $chat_id to testCheck, which will now handle message updates itself
                 testCheck($db, $chat_id);
                 // No need to send another message here as testCheck already handles it
                 break;
 
-            case $GLOBALS['messages']['force_check']:
+            case $GLOBALS['messages']['btn_force_check']:
                 $result = processCheck($db, true);
                 sendTelegramMessage(
                     $bot_token,
@@ -963,7 +984,7 @@ function processUpdate(array $update, string $bot_token, array $admin_ids, SQLit
                 );
                 break;
 
-            case $GLOBALS['messages']['screenshot_settings_menu']:
+            case $GLOBALS['messages']['btn_screenshot_settings_menu']:
                 $current_width = getSetting($db, 'viewport_width');
                 $current_height = getSetting($db, 'viewport_height');
                 $current_quality = getSetting($db, 'image_quality');
@@ -976,9 +997,9 @@ function processUpdate(array $update, string $bot_token, array $admin_ids, SQLit
                 );
                 break;
 
-            case $GLOBALS['messages']['set_width']:
-            case $GLOBALS['messages']['set_height']:
-            case $GLOBALS['messages']['set_quality']:
+            case $GLOBALS['messages']['btn_set_width']:
+            case $GLOBALS['messages']['btn_set_height']:
+            case $GLOBALS['messages']['btn_set_quality']:
                 $setting_key = '';
                 if ($text === $GLOBALS['messages']['set_width']) {
                     $setting_key = 'viewport_width';
@@ -999,11 +1020,11 @@ function processUpdate(array $update, string $bot_token, array $admin_ids, SQLit
                 );
                 break;
 
-            case $GLOBALS['messages']['back_to_menu']:
+            case $GLOBALS['messages']['btn_back_to_menu']:
                 sendTelegramMessage(
                     $bot_token,
                     $chat_id,
-                    $GLOBALS['messages']['back_to_menu'],
+                    $GLOBALS['messages']['back_to_menu_text'],
                     createAdminKeyboard()
                 );
                 break;
