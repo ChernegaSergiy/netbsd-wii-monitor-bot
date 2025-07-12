@@ -1001,13 +1001,13 @@ function processUpdate(array $update, string $bot_token, array $admin_ids, SQLit
             case $GLOBALS['messages']['btn_set_height']:
             case $GLOBALS['messages']['btn_set_quality']:
                 $setting_key = '';
-                if ($text === $GLOBALS['messages']['set_width']) {
+                if ($text === $GLOBALS['messages']['btn_set_width']) {
                     $setting_key = 'viewport_width';
                 }
-                if ($text === $GLOBALS['messages']['set_height']) {
+                if ($text === $GLOBALS['messages']['btn_set_height']) {
                     $setting_key = 'viewport_height';
                 }
-                if ($text === $GLOBALS['messages']['set_quality']) {
+                if ($text === $GLOBALS['messages']['btn_set_quality']) {
                     $setting_key = 'image_quality';
                 }
 
