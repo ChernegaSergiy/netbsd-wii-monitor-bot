@@ -21,11 +21,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     php-mbstring \
     composer \
     supervisor \
+    git \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 # Tell puppeteer-core where Chromium is
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 WORKDIR /app
 
