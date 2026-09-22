@@ -1,0 +1,15 @@
+services:
+  wiim-bot:
+    build: .
+    container_name: wiim-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - bot-data:/app/data
+    security_opt:
+      - seccomp=unconfined
+    shm_size: 256mb
+
+volumes:
+  bot-data:
