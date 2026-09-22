@@ -1,5 +1,7 @@
 # NetBSD Wii Status Monitor Telegram Bot
 
+[![Docker Image CI](https://github.com/ChernegaSergiy/netbsd-wii-monitor-bot/actions/workflows/docker-image.yml/badge.svg)](https://github.com/ChernegaSergiy/netbsd-wii-monitor-bot/actions/workflows/docker-image.yml)
+
 This Telegram bot monitors the live status page of a website hosted on a Nintendo Wii running NetBSD, as described in [Alex Haydock's blog post](https://blog.infected.systems/posts/2025-04-21-this-blog-is-hosted-on-a-nintendo-wii). The bot periodically checks for updates, captures a screenshot of the status page, and sends it to a specified Telegram channel. It also provides an administrative interface within Telegram for managing the bot's settings.
 
 ## Features
