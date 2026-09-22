@@ -10,6 +10,8 @@ services:
     security_opt:
       - seccomp=unconfined
     shm_size: 256mb
+    tmpfs:
+      - /tmp:exec,mode=1777
 
 volumes:
   bot-data:
