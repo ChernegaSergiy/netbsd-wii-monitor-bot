@@ -370,9 +370,6 @@ function getSleepTime(bool $initial_check, SQLite3 $db) : int
     }
 
     $interval = (int) getSetting($db, 'check_interval');
-    if ($interval <= 0) {
-        $interval = 900;
-    }
     
     return $interval - (time() % $interval);
 }
