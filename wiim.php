@@ -380,9 +380,6 @@ function getSleepTime($initial_check, $db)
     }
 
     $interval = (int) getSetting($db, 'check_interval');
-    if ($interval <= 0) {
-        $interval = 900;
-    }
     
     return $interval - (time() % $interval);
 }
