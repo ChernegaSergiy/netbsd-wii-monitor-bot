@@ -2,6 +2,12 @@
     "name": "chernegasergiy/netbsd-wii-monitor-bot",
     "description": "A Telegram bot that monitors a website hosted on a Nintendo Wii running NetBSD and sends notifications.",
     "type": "project",
+    "authors": [
+        {
+            "name": "Serhii Cherneha",
+            "email": "chernegasergiy3@gmail.com"
+        }
+    ],
     "require": {
         "php": ">=7.4",
         "vlucas/phpdotenv": "^5.6"
