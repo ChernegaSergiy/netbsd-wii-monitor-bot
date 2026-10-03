@@ -115,7 +115,7 @@ function initDatabase($db_file)
 /**
  * Get all settings from database
  *
- * @param  SQLite3  $db
+ * @param  SQLite3 $db
  * @return array
  */
 function getAllSettings($db)
@@ -136,8 +136,8 @@ function getAllSettings($db)
 /**
  * Get a specific setting value
  *
- * @param  SQLite3  $db
- * @param  string  $key
+ * @param  SQLite3     $db
+ * @param  string      $key
  * @return string|null
  */
 function getSetting($db, $key)
@@ -156,7 +156,7 @@ function getSetting($db, $key)
 /**
  * Update a setting value
  *
- * @param  SQLite3  $db
+ * @param  SQLite3 $db
  * @param  string  $key
  * @param  string  $value
  * @return bool
@@ -173,9 +173,9 @@ function updateSetting($db, $key, $value)
 /**
  * Send message via Telegram API
  *
- * @param  string  $bot_token
- * @param  int  $chat_id
- * @param  string  $text
+ * @param  string      $bot_token
+ * @param  int         $chat_id
+ * @param  string      $text
  * @param  array|null  $keyboard
  * @return array|false
  */
@@ -222,10 +222,10 @@ function sendTelegramMessage($bot_token, $chat_id, $text, $keyboard = null)
 /**
  * Edit message via Telegram API
  *
- * @param  string  $bot_token
- * @param  int  $chat_id
- * @param  int  $message_id
- * @param  string  $text
+ * @param  string      $bot_token
+ * @param  int         $chat_id
+ * @param  int         $message_id
+ * @param  string      $text
  * @param  array|null  $keyboard
  * @return array|false
  */
@@ -285,8 +285,8 @@ function editTelegramMessage($bot_token, $chat_id, $message_id, $text, $keyboard
 /**
  * Check if user is admin
  *
- * @param  int  $user_id
- * @param  array  $admin_ids
+ * @param  int   $user_id
+ * @param  array $admin_ids
  * @return bool
  */
 function isAdmin($user_id, $admin_ids)
@@ -338,7 +338,7 @@ function createScreenshotSettingsKeyboard()
 /**
  * Create settings keyboard
  *
- * @param  array  $settings
+ * @param  array $settings
  * @return array
  */
 function createSettingsKeyboard($settings)
@@ -366,8 +366,8 @@ function createSettingsKeyboard($settings)
 /**
  * Calculate wait time until next check
  *
- * @param  bool  $initial_check
- * @param  SQLite3  $db
+ * @param  bool    $initial_check
+ * @param  SQLite3 $db
  * @return int
  */
 function getSleepTime($initial_check, $db)
@@ -380,16 +380,16 @@ function getSleepTime($initial_check, $db)
     }
 
     $interval = (int) getSetting($db, 'check_interval');
-    
+
     return $interval - (time() % $interval);
 }
 
 /**
  * Get combined data (page content and screenshot) from Puppeteer server
  *
- * @param  string  $url
- * @param  SQLite3  $db
- * @param  int  $max_retries
+ * @param  string      $url
+ * @param  SQLite3     $db
+ * @param  int         $max_retries
  * @return array|false
  */
 function getCombinedData($url, $db, $max_retries = 3)
@@ -443,7 +443,7 @@ function getCombinedData($url, $db, $max_retries = 3)
 /**
  * Fetch generation timestamp from the page content
  *
- * @param  string  $content
+ * @param  string       $content
  * @return string|false
  */
 function fetchGeneratedOn($content)
@@ -471,9 +471,9 @@ function fetchGeneratedOn($content)
 /**
  * Convert timestamp between timezones
  *
- * @param  string  $timestamp_str
- * @param  string  $from_tz
- * @param  string  $to_tz
+ * @param  string $timestamp_str
+ * @param  string $from_tz
+ * @param  string $to_tz
  * @return string
  */
 function convertTimezone($timestamp_str, $from_tz, $to_tz)
@@ -484,7 +484,7 @@ function convertTimezone($timestamp_str, $from_tz, $to_tz)
             if (! $datetime) {
                 $timestamp = strtotime($timestamp_str);
                 if (false !== $timestamp) {
-                    $datetime = new DateTime;
+                    $datetime = new DateTime();
                     $datetime->setTimestamp($timestamp);
                     $datetime->setTimezone(new DateTimeZone($from_tz));
                 }
@@ -492,7 +492,7 @@ function convertTimezone($timestamp_str, $from_tz, $to_tz)
         } else {
             $timestamp = strtotime($timestamp_str);
             if (false !== $timestamp) {
-                $datetime = new DateTime;
+                $datetime = new DateTime();
                 $datetime->setTimestamp($timestamp);
                 $datetime->setTimezone(new DateTimeZone($from_tz));
             } else {
@@ -520,8 +520,8 @@ function convertTimezone($timestamp_str, $from_tz, $to_tz)
  * Check if timestamp is recent
  *
  * @param  string  $timestamp_str
- * @param  int  $minutes
- * @param  SQLite3  $db
+ * @param  int     $minutes
+ * @param  SQLite3 $db
  * @return bool
  */
 function isRecent($timestamp_str, $minutes, $db)
@@ -541,9 +541,9 @@ function isRecent($timestamp_str, $minutes, $db)
 /**
  * Take screenshot of the target URL
  *
- * @param  string  $target_url
- * @param  SQLite3  $db
- * @param  int  $max_retries
+ * @param  string       $target_url
+ * @param  SQLite3      $db
+ * @param  int          $max_retries
  * @return string|false
  */
 function takeScreenshot($target_url, $db, $max_retries = 3)
@@ -596,7 +596,7 @@ function takeScreenshot($target_url, $db, $max_retries = 3)
  *
  * @param  string  $image_path
  * @param  string  $caption
- * @param  SQLite3  $db
+ * @param  SQLite3 $db
  * @return bool
  */
 function sendScreenshot($image_path, $caption, $db)
@@ -641,7 +641,7 @@ function sendScreenshot($image_path, $caption, $db)
 /**
  * Check if screenshot contains all required information
  *
- * @param  string  $content
+ * @param  string $content
  * @return bool
  */
 function isScreenshotComplete($content)
@@ -673,8 +673,8 @@ function isScreenshotComplete($content)
 /**
  * Process check logic
  *
- * @param  SQLite3  $db
- * @param  bool  $force
+ * @param  SQLite3 $db
+ * @param  bool    $force
  * @return bool
  */
 function processCheck($db, $force = false, $attempt = 1)
@@ -727,7 +727,7 @@ function processCheck($db, $force = false, $attempt = 1)
 
             return processCheck($db, $force, $attempt + 1);
         }
-        
+
         echo "No new generation after 3 attempts.\n";
 
         return true;
@@ -743,7 +743,8 @@ function processCheck($db, $force = false, $attempt = 1)
     // Save and send screenshot
     $image_path = 'screenshot.jpg';
     if (file_put_contents($image_path, base64_decode($data['screenshot']))) {
-        $caption = sprintf("New NetBSD Wii build:\nUTC: %s\nLocal: %s",
+        $caption = sprintf(
+            "New NetBSD Wii build:\nUTC: %s\nLocal: %s",
             $generated_on,
             $converted_time
         );
@@ -766,8 +767,8 @@ function processCheck($db, $force = false, $attempt = 1)
 /**
  * Test check functionality
  *
- * @param  SQLite3  $db
- * @param  int  $chat_id
+ * @param  SQLite3 $db
+ * @param  int     $chat_id
  * @return string
  */
 function testCheck($db, $chat_id)
@@ -865,7 +866,7 @@ function testCheck($db, $chat_id)
  * This function duplicates the core logic of testCheck but doesn't send intermediate updates.
  * You might want to refine this or remove it if you prefer to only allow tests with live updates.
  *
- * @param  SQLite3  $db
+ * @param  SQLite3 $db
  * @return string
  */
 function _performFullTestAndReturnResult($db)
@@ -921,10 +922,10 @@ function _performFullTestAndReturnResult($db)
 /**
  * Process incoming update from Telegram
  *
- * @param  array  $update
+ * @param  array   $update
  * @param  string  $bot_token
- * @param  array  $admin_ids
- * @param  SQLite3  $db
+ * @param  array   $admin_ids
+ * @param  SQLite3 $db
  * @return void
  */
 function processUpdate($update, $bot_token, $admin_ids, $db)
@@ -1084,8 +1085,8 @@ function processUpdate($update, $bot_token, $admin_ids, $db)
 /**
  * Get updates from Telegram API
  *
- * @param  string  $bot_token
- * @param  int  $offset
+ * @param  string $bot_token
+ * @param  int    $offset
  * @return array
  */
 function getUpdates($bot_token, $offset)
