@@ -370,11 +370,8 @@ function createSettingsKeyboard($settings)
  * @param  SQLite3  $db
  * @return int
  */
-function waitUntilNextHalfHour($initial_check, $db)
+function getSleepTime($initial_check, $db)
 {
-    $now = time();
-    $next = strtotime(date('Y-m-d H:00')) + (date('i') < 30 ? 1800 : 3600);
-
     if ($initial_check) {
         $cache_file = getSetting($db, 'cache_file');
         if (! file_exists($cache_file)) {
@@ -382,7 +379,7 @@ function waitUntilNextHalfHour($initial_check, $db)
         }
     }
 
-    return $next - $now;
+    return (int) getSetting($db, 'check_interval');
 }
 
 /**
@@ -1138,7 +1135,7 @@ while (true) {
     }
 
     // Wait until next check time
-    $sleep_time = waitUntilNextHalfHour(false, $db);
+    $sleep_time = getSleepTime(false, $db);
 
     if ($sleep_time > 0) {
         $start = time();
