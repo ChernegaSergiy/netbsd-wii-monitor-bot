@@ -9,7 +9,7 @@ updates:
       - "php"
 
   - package-ecosystem: "npm"
-    directory: "/"
+    directory: "/puppeteer-server"
     schedule:
       interval: "weekly"
     labels:
