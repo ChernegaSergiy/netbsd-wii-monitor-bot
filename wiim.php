@@ -1089,15 +1089,15 @@ function processUpdate($update, $bot_token, $admin_ids, $db)
  * @param  int    $offset
  * @return array
  */
-function getUpdates($bot_token, $offset)
+function getUpdates($bot_token, $offset, $timeout = 30)
 {
-    $url = "https://api.telegram.org/bot{$bot_token}/getUpdates?offset={$offset}&timeout=30";
+    $url = "https://api.telegram.org/bot{$bot_token}/getUpdates?offset={$offset}&timeout={$timeout}";
 
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_SSL_VERIFYPEER => true,
-        CURLOPT_TIMEOUT => 35,
+        CURLOPT_TIMEOUT => $timeout + 5,
         CURLOPT_CONNECTTIMEOUT => 10,
         CURLOPT_SSL_VERIFYHOST => 2,
     ]);
@@ -1143,7 +1143,10 @@ while (true) {
     if ($sleep_time > 0) {
         $start = time();
         while (time() - $start < $sleep_time) {
-            $updates = getUpdates($bot_token, $update_id + 1);
+            $remaining = $sleep_time - (time() - $start);
+            $timeout = min(30, $remaining);
+            
+            $updates = getUpdates($bot_token, $update_id + 1, $timeout);
 
             if (isset($updates['result']) && count($updates['result']) > 0) {
                 foreach ($updates['result'] as $update) {
