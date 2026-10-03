@@ -151,20 +151,33 @@ class Checker
             if (!empty($data['screenshot'])) {
                 $status_updates[] = Messages::get('screenshot_captured');
                 $this->bot_client->editMessageText($chat_id, $message_id, $result_header . implode("\n", $status_updates));
+
+                $image_path = 'test_screenshot.jpg';
+                if (file_put_contents($image_path, base64_decode($data['screenshot']))) {
+                    $success = $this->bot_client->sendPhoto($chat_id, $image_path, Messages::get('test_notification_caption'));
+                    if ($success) {
+                        $status_updates[] = Messages::get('test_notification_sent');
+                    } else {
+                        $status_updates[] = Messages::get('test_notification_failed');
+                    }
+                    unlink($image_path);
+                } else {
+                    $status_updates[] = Messages::get('screenshot_failed');
+                }
             } else {
                 $status_updates[] = Messages::get('screenshot_failed');
                 $this->bot_client->editMessageText($chat_id, $message_id, $result_header . implode("\n", $status_updates));
+
+                $success = $this->bot_client->sendMessage($chat_id, Messages::get('test_notification_caption'));
+                if ($success) {
+                    $status_updates[] = Messages::get('test_notification_sent');
+                } else {
+                    $status_updates[] = Messages::get('test_notification_failed');
+                }
             }
         } else {
             $status_updates[] = Messages::get('page_not_accessible');
             $this->bot_client->editMessageText($chat_id, $message_id, $result_header . implode("\n", $status_updates));
-        }
-
-        $success = $this->bot_client->sendMessage($chat_id, Messages::get('test_notification_caption'));
-        if ($success) {
-            $status_updates[] = Messages::get('test_notification_sent');
-        } else {
-            $status_updates[] = Messages::get('test_notification_failed');
         }
 
         $this->bot_client->editMessageText($chat_id, $message_id, $result_header . implode("\n", $status_updates));
