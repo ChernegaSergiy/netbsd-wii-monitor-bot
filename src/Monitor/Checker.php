@@ -31,13 +31,13 @@ class Checker
         $this->bot_client = $bot_client;
     }
 
-    public function processCheck(bool $force = false, int $attempt = 1): bool
+    public function processCheck(bool $force = false, int $attempt = 1) : bool
     {
         echo '[ ' . date('H:i:s') . " ] Check started…\n";
 
         $check_url = $this->settings->get('check_url');
         $cache_file = $this->settings->get('cache_file');
-        
+
         $data = $this->puppeteer->getCombinedData($check_url);
         if (! $data) {
             echo "Failed to get data from Puppeteer server.\n";
@@ -70,7 +70,7 @@ class Checker
                 sleep(30);
                 return $this->processCheck($force, $attempt + 1);
             }
-            
+
             echo "No new generation after 3 attempts.\n";
             return true;
         }
@@ -91,7 +91,7 @@ class Checker
 
             $chat_id = $this->settings->get('chat_id');
             $success = $this->bot_client->sendPhoto($chat_id, $image_path, $caption);
-            
+
             if ($success) {
                 echo "Screenshot sent with timestamp {$converted_time}\n";
             } else {
@@ -105,7 +105,7 @@ class Checker
         return false;
     }
 
-    public function testCheck(string $chat_id): string
+    public function testCheck(string $chat_id) : string
     {
         $initial_message_text = Messages::get('test_starting');
         $sent_message = $this->bot_client->sendMessage($chat_id, $initial_message_text);
@@ -172,11 +172,11 @@ class Checker
         return $result_header . implode("\n", $status_updates);
     }
 
-    private function performFullTestAndReturnResult(): string
+    private function performFullTestAndReturnResult() : string
     {
         $status_updates = [];
         $result_header = Messages::get('test_results_header');
-        
+
         $check_url = $this->settings->get('check_url');
         $data = $this->puppeteer->getCombinedData($check_url);
 
@@ -204,7 +204,7 @@ class Checker
         }
 
         $status_updates[] = Messages::get('initial_message_failed_fallback');
-        
+
         return $result_header . implode("\n", $status_updates);
     }
 }

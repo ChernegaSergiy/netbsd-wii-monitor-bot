@@ -6,7 +6,7 @@ namespace App\Monitor;
 
 class HtmlParser
 {
-    public function fetchGeneratedOn(string $content): string|false
+    public function fetchGeneratedOn(string $content) : string|false
     {
         $patterns = [
             '/Generated on:\s+([^\n<]+)/',
@@ -24,7 +24,7 @@ class HtmlParser
         return false;
     }
 
-    public function isScreenshotComplete(string $content): bool
+    public function isScreenshotComplete(string $content) : bool
     {
         $top_start = strpos($content, '=== top ===');
 

@@ -25,10 +25,10 @@ class BotApplication
         $this->settings = new SettingsManager($db_file);
         $this->bot_client = new BotClient($bot_token);
         $this->time_manager = new TimeManager($this->settings);
-        
+
         $puppeteer = new PuppeteerClient($this->settings);
         $parser = new HtmlParser();
-        
+
         $this->checker = new Checker(
             $this->settings,
             $puppeteer,
@@ -36,7 +36,7 @@ class BotApplication
             $this->time_manager,
             $this->bot_client
         );
-        
+
         $this->router = new CommandRouter(
             $this->bot_client,
             $this->settings,
@@ -45,10 +45,10 @@ class BotApplication
         );
     }
 
-    public function run(): void
+    public function run() : void
     {
         $update_id = 0;
-        
+
         // Initial check
         $initial_check = false;
         $cache_file = $this->settings->get('cache_file');

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Utils;
 
+use App\Config\SettingsManager;
 use DateTime;
 use DateTimeZone;
 use Exception;
-use App\Config\SettingsManager;
 
 class TimeManager
 {
@@ -18,7 +18,7 @@ class TimeManager
         $this->settings = $settings;
     }
 
-    public function convertTimezone(string $timestamp_str): string
+    public function convertTimezone(string $timestamp_str) : string
     {
         $from_tz = $this->settings->get('source_timezone') ?? 'UTC';
         $to_tz = $this->settings->get('target_timezone') ?? 'UTC';
@@ -29,7 +29,7 @@ class TimeManager
                 if (! $datetime) {
                     $timestamp = strtotime($timestamp_str);
                     if (false !== $timestamp) {
-                        $datetime = new DateTime;
+                        $datetime = new DateTime();
                         $datetime->setTimestamp($timestamp);
                         $datetime->setTimezone(new DateTimeZone($from_tz));
                     }
@@ -37,7 +37,7 @@ class TimeManager
             } else {
                 $timestamp = strtotime($timestamp_str);
                 if (false !== $timestamp) {
-                    $datetime = new DateTime;
+                    $datetime = new DateTime();
                     $datetime->setTimestamp($timestamp);
                     $datetime->setTimezone(new DateTimeZone($from_tz));
                 } else {
@@ -59,10 +59,10 @@ class TimeManager
         }
     }
 
-    public function isRecent(string $timestamp_str, int $minutes): bool
+    public function isRecent(string $timestamp_str, int $minutes) : bool
     {
         $source_tz = $this->settings->get('source_timezone') ?? 'UTC';
-        
+
         try {
             $dt = new DateTime($timestamp_str, new DateTimeZone($source_tz));
             $now = new DateTime('now', new DateTimeZone($source_tz));
@@ -74,7 +74,7 @@ class TimeManager
         }
     }
 
-    public function getSleepTime(bool $initial_check): int
+    public function getSleepTime(bool $initial_check) : int
     {
         if ($initial_check) {
             $cache_file = $this->settings->get('cache_file');

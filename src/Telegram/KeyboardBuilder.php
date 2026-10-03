@@ -8,7 +8,7 @@ use App\Constants\Messages;
 
 class KeyboardBuilder
 {
-    public static function createAdminKeyboard(): array
+    public static function createAdminKeyboard() : array
     {
         return [
             'keyboard' => [
@@ -24,7 +24,7 @@ class KeyboardBuilder
         ];
     }
 
-    public static function createScreenshotSettingsKeyboard(): array
+    public static function createScreenshotSettingsKeyboard() : array
     {
         return [
             'keyboard' => [
@@ -39,7 +39,7 @@ class KeyboardBuilder
         ];
     }
 
-    public static function createSettingsKeyboard(array $settings): array
+    public static function createSettingsKeyboard(array $settings) : array
     {
         $keyboard = [[]];
         $i = 0;

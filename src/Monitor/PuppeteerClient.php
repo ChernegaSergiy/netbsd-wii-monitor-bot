@@ -15,7 +15,7 @@ class PuppeteerClient
         $this->settings = $settings;
     }
 
-    public function getCombinedData(string $url, int $max_retries = 3): array|false
+    public function getCombinedData(string $url, int $max_retries = 3) : array|false
     {
         for ($attempt = 1; $attempt <= $max_retries; $attempt++) {
             $server_url = $this->settings->get('puppeteer_server') ?? 'http://localhost:3000';

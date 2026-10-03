@@ -27,7 +27,7 @@ class CommandRouter
         $this->admin_ids = $admin_ids;
     }
 
-    public function processUpdate(array $update): void
+    public function processUpdate(array $update) : void
     {
         if (!isset($update['message'])) {
             return;
@@ -59,12 +59,12 @@ class CommandRouter
         $this->handleCommand((string) $chat_id, $user_id, $text);
     }
 
-    private function isAdmin(int $user_id): bool
+    private function isAdmin(int $user_id) : bool
     {
         return in_array($user_id, $this->admin_ids, true);
     }
 
-    private function handleCommand(string $chat_id, int $user_id, string $text): void
+    private function handleCommand(string $chat_id, int $user_id, string $text) : void
     {
         switch ($text) {
             case Messages::get('btn_show_settings'):
@@ -144,10 +144,10 @@ class CommandRouter
         }
     }
 
-    private function handleDefaultText(string $chat_id, int $user_id, string $text): void
+    private function handleDefaultText(string $chat_id, int $user_id, string $text) : void
     {
         $all_settings = $this->settings->getAll();
-        
+
         // Check if selecting a setting to edit
         if (array_key_exists($text, $all_settings)) {
             file_put_contents($this->getSessionFile($user_id), $text);
@@ -184,7 +184,7 @@ class CommandRouter
         );
     }
 
-    private function getSessionFile(int $user_id): string
+    private function getSessionFile(int $user_id) : string
     {
         return "session_{$user_id}.txt";
     }

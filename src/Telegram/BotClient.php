@@ -15,7 +15,7 @@ class BotClient
         $this->bot_token = $bot_token;
     }
 
-    public function getUpdates(int $offset): array
+    public function getUpdates(int $offset) : array
     {
         $url = "https://api.telegram.org/bot{$this->bot_token}/getUpdates?offset={$offset}&timeout=30";
 
@@ -40,7 +40,7 @@ class BotClient
         return json_decode($response, true) ?? [];
     }
 
-    public function sendMessage(string $chat_id, string $text, ?array $keyboard = null): array|false
+    public function sendMessage(string $chat_id, string $text, ?array $keyboard = null) : array|false
     {
         $url = "https://api.telegram.org/bot{$this->bot_token}/sendMessage";
 
@@ -75,7 +75,7 @@ class BotClient
         return json_decode($response, true) ?? false;
     }
 
-    public function sendPhoto(string $chat_id, string $image_path, string $caption): bool
+    public function sendPhoto(string $chat_id, string $image_path, string $caption) : bool
     {
         $url = "https://api.telegram.org/bot{$this->bot_token}/sendPhoto";
         $ch = curl_init();
@@ -98,7 +98,7 @@ class BotClient
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        if ($error || $http_code !== 200) {
+        if ($error || 200 !== $http_code) {
             error_log("Telegram send photo error: $error (HTTP $http_code) - Response: " . ($response ?: 'none'));
             return false;
         }
@@ -106,7 +106,7 @@ class BotClient
         return true;
     }
 
-    public function editMessageText(string $chat_id, int $message_id, string $text, ?array $keyboard = null): array|false
+    public function editMessageText(string $chat_id, int $message_id, string $text, ?array $keyboard = null) : array|false
     {
         $url = "https://api.telegram.org/bot{$this->bot_token}/editMessageText";
 

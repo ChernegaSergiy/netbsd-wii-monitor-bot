@@ -44,7 +44,7 @@ class Messages
         'btn_back_to_menu' => '◀️ Back to Menu',
     ];
 
-    public static function get(string $key): string
+    public static function get(string $key) : string
     {
         return self::ALL[$key] ?? $key;
     }

@@ -16,7 +16,7 @@ class SettingsManager
         $this->initialize();
     }
 
-    private function initialize(): void
+    private function initialize() : void
     {
         // Create settings table if it doesn't exist
         $this->db->exec('
@@ -51,7 +51,7 @@ class SettingsManager
         }
     }
 
-    public function getAll(): array
+    public function getAll() : array
     {
         $result = $this->db->query('SELECT key, value, description FROM settings');
         $settings = [];
@@ -66,7 +66,7 @@ class SettingsManager
         return $settings;
     }
 
-    public function get(string $key): ?string
+    public function get(string $key) : ?string
     {
         $stmt = $this->db->prepare('SELECT value FROM settings WHERE key = :key');
         $stmt->bindValue(':key', $key, SQLITE3_TEXT);
@@ -79,7 +79,7 @@ class SettingsManager
         return null;
     }
 
-    public function update(string $key, string $value): bool
+    public function update(string $key, string $value) : bool
     {
         $stmt = $this->db->prepare('UPDATE settings SET value = :value WHERE key = :key');
         $stmt->bindValue(':value', $value, SQLITE3_TEXT);
