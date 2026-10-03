@@ -105,4 +105,40 @@ class BotClient
 
         return true;
     }
+
+    public function editMessageText(string $chatId, int $messageId, string $text, ?array $keyboard = null): array|false
+    {
+        $url = "https://api.telegram.org/bot{$this->botToken}/editMessageText";
+
+        $postData = [
+            'chat_id' => $chatId,
+            'message_id' => $messageId,
+            'text' => $text,
+            'parse_mode' => 'HTML',
+        ];
+
+        if (null !== $keyboard) {
+            $postData['reply_markup'] = $keyboard;
+        }
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($postData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+            CURLOPT_TIMEOUT => 10,
+        ]);
+
+        $response = curl_exec($ch);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($error) {
+            error_log("Telegram edit message error: $error");
+            return false;
+        }
+
+        return json_decode($response, true) ?? false;
+    }
 }
