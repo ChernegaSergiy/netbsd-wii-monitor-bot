@@ -379,7 +379,12 @@ function getSleepTime($initial_check, $db)
         }
     }
 
-    return (int) getSetting($db, 'check_interval');
+    $interval = (int) getSetting($db, 'check_interval');
+    if ($interval <= 0) {
+        $interval = 900;
+    }
+    
+    return $interval - (time() % $interval);
 }
 
 /**
