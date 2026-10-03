@@ -154,7 +154,8 @@ class Checker
 
                 $image_path = 'test_screenshot.jpg';
                 if (file_put_contents($image_path, base64_decode($data['screenshot']))) {
-                    $success = $this->bot_client->sendPhoto($chat_id, $image_path, Messages::get('test_notification_caption'));
+                    $target_chat_id = $this->settings->get('chat_id');
+                    $success = $this->bot_client->sendPhoto($target_chat_id, $image_path, Messages::get('test_notification_caption'));
                     if ($success) {
                         $status_updates[] = Messages::get('test_notification_sent');
                     } else {
@@ -168,7 +169,8 @@ class Checker
                 $status_updates[] = Messages::get('screenshot_failed');
                 $this->bot_client->editMessageText($chat_id, $message_id, $result_header . implode("\n", $status_updates));
 
-                $success = $this->bot_client->sendMessage($chat_id, Messages::get('test_notification_caption'));
+                $target_chat_id = $this->settings->get('chat_id');
+                $success = $this->bot_client->sendMessage($target_chat_id, Messages::get('test_notification_caption'));
                 if ($success) {
                     $status_updates[] = Messages::get('test_notification_sent');
                 } else {
