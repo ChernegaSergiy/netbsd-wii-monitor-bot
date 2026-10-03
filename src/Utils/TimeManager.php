@@ -85,7 +85,7 @@ class TimeManager
 
         $interval = (int) $this->settings->get('check_interval');
         if ($interval <= 0) {
-            $interval = 900;
+            throw new \App\Exceptions\ConfigurationException('check_interval must be greater than 0');
         }
 
         return $interval - (time() % $interval);
