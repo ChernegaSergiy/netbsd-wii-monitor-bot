@@ -1022,11 +1022,13 @@ function processUpdate($update, $bot_token, $admin_ids, $db)
                 }
 
                 file_put_contents("session_{$user_id}.txt", $setting_key);
-                $current_value = getSetting($db, $setting_key);
+                $all_settings = getAllSettings($db);
+                $current_value = $all_settings[$setting_key]['value'] ?? '';
+                $description = $all_settings[$setting_key]['description'] ?? '';
                 sendTelegramMessage(
                     $bot_token,
                     $chat_id,
-                    sprintf($GLOBALS['messages']['enter_value'], $setting_key, $current_value)
+                    sprintf($GLOBALS['messages']['enter_value'], $setting_key, $current_value, $description)
                 );
                 break;
 
