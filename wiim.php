@@ -678,7 +678,7 @@ function isScreenshotComplete($content)
  * @param  bool  $force
  * @return bool
  */
-function processCheck($db, $force = false)
+function processCheck($db, $force = false, $attempt = 1)
 {
     echo '[ ' . date('H:i:s') . " ] Check started…\n";
 
@@ -700,7 +700,7 @@ function processCheck($db, $force = false)
         echo "Screenshot is incomplete, scheduling retry in 1 minute…\n";
         sleep(60); // Wait 1 minute before retrying
 
-        return processCheck($db, $force); // Recursive retry
+        return processCheck($db, $force, $attempt); // Recursive retry
     }
 
     // Extract timestamp from content
@@ -722,7 +722,14 @@ function processCheck($db, $force = false)
     }
 
     if ($generated_on === $last_gen && ! $force) {
-        echo "No new generation.\n";
+        if ($attempt < 3) {
+            echo "No new generation (attempt $attempt). Waiting 30s to see if NetBSD is just slow...\n";
+            sleep(30);
+
+            return processCheck($db, $force, $attempt + 1);
+        }
+        
+        echo "No new generation after 3 attempts.\n";
 
         return true;
     }
