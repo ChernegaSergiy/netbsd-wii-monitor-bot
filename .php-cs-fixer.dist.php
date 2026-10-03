@@ -5,6 +5,7 @@ use PhpCsFixer\Finder;
 
 $finder = Finder::create()
     ->in(__DIR__ . '/src')
+    ->append([__DIR__ . '/wiim.php'])
     ->name('*.php');
 
 return (new Config())
