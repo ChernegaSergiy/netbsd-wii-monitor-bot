@@ -15,15 +15,15 @@ class BotClient
         $this->bot_token = $bot_token;
     }
 
-    public function getUpdates(int $offset) : array
+    public function getUpdates(int $offset, int $timeout = 30) : array
     {
-        $url = "https://api.telegram.org/bot{$this->bot_token}/getUpdates?offset={$offset}&timeout=30";
+        $url = "https://api.telegram.org/bot{$this->bot_token}/getUpdates?offset={$offset}&timeout={$timeout}";
 
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_TIMEOUT => 35,
+            CURLOPT_TIMEOUT => $timeout + 5,
             CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_SSL_VERIFYHOST => 2,
         ]);

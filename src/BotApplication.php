@@ -77,7 +77,10 @@ class BotApplication
             if ($sleep_time > 0) {
                 $start = time();
                 while (time() - $start < $sleep_time) {
-                    $updates = $this->bot_client->getUpdates($update_id + 1);
+                    $remaining = $sleep_time - (time() - $start);
+                    $timeout = min(30, $remaining);
+                    
+                    $updates = $this->bot_client->getUpdates($update_id + 1, $timeout);
 
                     if (!empty($updates['result'])) {
                         foreach ($updates['result'] as $update) {
