@@ -51,7 +51,7 @@ class BotClient
         ];
 
         if (null !== $keyboard) {
-            $post_data['reply_markup'] = json_encode($keyboard);
+            $post_data['reply_markup'] = json_encode($keyboard, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
 
         $ch = curl_init($url);
