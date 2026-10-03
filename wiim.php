@@ -9,9 +9,10 @@
 
 declare(strict_types=1);
 
-require_once 'vendor/autoload.php';
 use App\BotApplication;
 use Dotenv\Dotenv;
+
+require __DIR__ . '/vendor/autoload.php';
 
 // Error reporting for debugging
 ini_set('display_errors', '1');
