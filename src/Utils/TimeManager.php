@@ -18,54 +18,54 @@ class TimeManager
         $this->settings = $settings;
     }
 
-    public function convertTimezone(string $timestampStr): string
+    public function convertTimezone(string $timestamp_str): string
     {
-        $fromTz = $this->settings->get('source_timezone') ?? 'UTC';
-        $toTz = $this->settings->get('target_timezone') ?? 'UTC';
+        $from_tz = $this->settings->get('source_timezone') ?? 'UTC';
+        $to_tz = $this->settings->get('target_timezone') ?? 'UTC';
 
         try {
-            if (preg_match('/^\w{3} \w{3} \d{1,2} \d{2}:\d{2}:\d{2} UTC \d{4}$/', $timestampStr)) {
-                $datetime = DateTime::createFromFormat('D M d H:i:s T Y', $timestampStr);
+            if (preg_match('/^\w{3} \w{3} \d{1,2} \d{2}:\d{2}:\d{2} UTC \d{4}$/', $timestamp_str)) {
+                $datetime = DateTime::createFromFormat('D M d H:i:s T Y', $timestamp_str);
                 if (! $datetime) {
-                    $timestamp = strtotime($timestampStr);
+                    $timestamp = strtotime($timestamp_str);
                     if (false !== $timestamp) {
                         $datetime = new DateTime;
                         $datetime->setTimestamp($timestamp);
-                        $datetime->setTimezone(new DateTimeZone($fromTz));
+                        $datetime->setTimezone(new DateTimeZone($from_tz));
                     }
                 }
             } else {
-                $timestamp = strtotime($timestampStr);
+                $timestamp = strtotime($timestamp_str);
                 if (false !== $timestamp) {
                     $datetime = new DateTime;
                     $datetime->setTimestamp($timestamp);
-                    $datetime->setTimezone(new DateTimeZone($fromTz));
+                    $datetime->setTimezone(new DateTimeZone($from_tz));
                 } else {
                     $datetime = false;
                 }
             }
 
             if (! $datetime) {
-                error_log("Failed to parse timestamp: $timestampStr");
-                return $timestampStr . ' (conversion failed)';
+                error_log("Failed to parse timestamp: $timestamp_str");
+                return $timestamp_str . ' (conversion failed)';
             }
 
-            $datetime->setTimezone(new DateTimeZone($toTz));
+            $datetime->setTimezone(new DateTimeZone($to_tz));
 
-            return $datetime->format('Y-m-d H:i:s') . " ({$toTz})";
+            return $datetime->format('Y-m-d H:i:s') . " ({$to_tz})";
         } catch (Exception $e) {
             error_log('Timezone conversion error: ' . $e->getMessage());
-            return $timestampStr . ' (conversion error)';
+            return $timestamp_str . ' (conversion error)';
         }
     }
 
-    public function isRecent(string $timestampStr, int $minutes): bool
+    public function isRecent(string $timestamp_str, int $minutes): bool
     {
-        $sourceTz = $this->settings->get('source_timezone') ?? 'UTC';
+        $source_tz = $this->settings->get('source_timezone') ?? 'UTC';
         
         try {
-            $dt = new DateTime($timestampStr, new DateTimeZone($sourceTz));
-            $now = new DateTime('now', new DateTimeZone($sourceTz));
+            $dt = new DateTime($timestamp_str, new DateTimeZone($source_tz));
+            $now = new DateTime('now', new DateTimeZone($source_tz));
             $diff = $now->getTimestamp() - $dt->getTimestamp();
 
             return $diff <= ($minutes * 60);
@@ -74,11 +74,11 @@ class TimeManager
         }
     }
 
-    public function getSleepTime(bool $initialCheck): int
+    public function getSleepTime(bool $initial_check): int
     {
-        if ($initialCheck) {
-            $cacheFile = $this->settings->get('cache_file');
-            if ($cacheFile && !file_exists($cacheFile)) {
+        if ($initial_check) {
+            $cache_file = $this->settings->get('cache_file');
+            if ($cache_file && !file_exists($cache_file)) {
                 return 0;
             }
         }

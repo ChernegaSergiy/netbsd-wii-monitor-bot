@@ -22,14 +22,14 @@ error_reporting(E_ALL);
 $dotenv = Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
-$botToken = getenv('BOT_TOKEN');
-$adminIdsStr = getenv('ADMIN_IDS');
-$adminIds = $adminIdsStr ? array_map('intval', explode(',', $adminIdsStr)) : [];
-$dbFile = getenv('DB_FILE') ?: 'bot_config.db';
+$bot_token = getenv('BOT_TOKEN');
+$admin_ids_str = getenv('ADMIN_IDS');
+$admin_ids = $admin_ids_str ? array_map('intval', explode(',', $admin_ids_str)) : [];
+$db_file = getenv('DB_FILE') ?: 'bot_config.db';
 
-if (!$botToken || empty($adminIds)) {
+if (!$bot_token || empty($admin_ids)) {
     exit("Error! Missing required configuration variables (BOT_TOKEN or ADMIN_IDS).\n");
 }
 
-$app = new BotApplication($botToken, $adminIds, $dbFile);
+$app = new BotApplication($bot_token, $admin_ids, $db_file);
 $app->run();

@@ -10,21 +10,21 @@ use App\Monitor\Checker;
 
 class CommandRouter
 {
-    private BotClient $botClient;
+    private BotClient $bot_client;
     private SettingsManager $settings;
     private Checker $checker;
-    private array $adminIds;
+    private array $admin_ids;
 
     public function __construct(
-        BotClient $botClient,
+        BotClient $bot_client,
         SettingsManager $settings,
         Checker $checker,
-        array $adminIds
+        array $admin_ids
     ) {
-        $this->botClient = $botClient;
+        $this->bot_client = $bot_client;
         $this->settings = $settings;
         $this->checker = $checker;
-        $this->adminIds = $adminIds;
+        $this->admin_ids = $admin_ids;
     }
 
     public function processUpdate(array $update): void
@@ -34,65 +34,65 @@ class CommandRouter
         }
 
         $message = $update['message'];
-        $chatId = $message['chat']['id'];
-        $userId = $message['from']['id'];
+        $chat_id = $message['chat']['id'];
+        $user_id = $message['from']['id'];
         $text = $message['text'] ?? '';
 
         if ('/start' === $text) {
-            if ($this->isAdmin($userId)) {
-                $this->botClient->sendMessage(
-                    (string) $chatId,
+            if ($this->isAdmin($user_id)) {
+                $this->bot_client->sendMessage(
+                    (string) $chat_id,
                     Messages::get('welcome_admin'),
                     KeyboardBuilder::createAdminKeyboard()
                 );
             } else {
-                $this->botClient->sendMessage((string) $chatId, Messages::get('access_denied'));
+                $this->bot_client->sendMessage((string) $chat_id, Messages::get('access_denied'));
             }
             return;
         }
 
-        if (!$this->isAdmin($userId)) {
-            $this->botClient->sendMessage((string) $chatId, Messages::get('no_access'));
+        if (!$this->isAdmin($user_id)) {
+            $this->bot_client->sendMessage((string) $chat_id, Messages::get('no_access'));
             return;
         }
 
-        $this->handleCommand((string) $chatId, $userId, $text);
+        $this->handleCommand((string) $chat_id, $user_id, $text);
     }
 
-    private function isAdmin(int $userId): bool
+    private function isAdmin(int $user_id): bool
     {
-        return in_array($userId, $this->adminIds, true);
+        return in_array($user_id, $this->admin_ids, true);
     }
 
-    private function handleCommand(string $chatId, int $userId, string $text): void
+    private function handleCommand(string $chat_id, int $user_id, string $text): void
     {
         switch ($text) {
             case Messages::get('btn_show_settings'):
-                $allSettings = $this->settings->getAll();
-                $responseText = Messages::get('current_settings');
-                foreach ($allSettings as $key => $data) {
-                    $responseText .= sprintf("<b>%s</b>: %s\n<i>%s</i>\n\n", $key, $data['value'], $data['description']);
+                $all_settings = $this->settings->getAll();
+                $response_text = Messages::get('current_settings');
+                foreach ($all_settings as $key => $data) {
+                    $response_text .= sprintf("<b>%s</b>: %s\n<i>%s</i>\n\n", $key, $data['value'], $data['description']);
                 }
-                $this->botClient->sendMessage($chatId, $responseText);
+                $this->bot_client->sendMessage($chat_id, $response_text);
                 break;
 
             case Messages::get('btn_edit_setting'):
-                $allSettings = $this->settings->getAll();
-                $this->botClient->sendMessage(
-                    $chatId,
+                $all_settings = $this->settings->getAll();
+                $this->bot_client->sendMessage(
+                    $chat_id,
                     Messages::get('select_setting'),
-                    KeyboardBuilder::createSettingsKeyboard($allSettings)
+                    KeyboardBuilder::createSettingsKeyboard($all_settings)
                 );
                 break;
 
             case Messages::get('btn_test'):
-                $this->checker->testCheck($chatId);
+                $this->checker->testCheck($chat_id);
                 break;
 
             case Messages::get('btn_force_check'):
                 $result = $this->checker->processCheck(true);
-                $this->botClient->sendMessage(
-                    $chatId,
+                $this->bot_client->sendMessage(
+                    $chat_id,
                     $result ? Messages::get('check_completed') : Messages::get('check_failed')
                 );
                 break;
@@ -102,8 +102,8 @@ class CommandRouter
                 $height = $this->settings->get('viewport_height');
                 $quality = $this->settings->get('image_quality');
                 $message = sprintf(Messages::get('screenshot_settings'), $width, $height, $quality);
-                $this->botClient->sendMessage(
-                    $chatId,
+                $this->bot_client->sendMessage(
+                    $chat_id,
                     $message,
                     KeyboardBuilder::createScreenshotSettingsKeyboard()
                 );
@@ -112,80 +112,80 @@ class CommandRouter
             case Messages::get('btn_set_width'):
             case Messages::get('btn_set_height'):
             case Messages::get('btn_set_quality'):
-                $settingKey = '';
+                $setting_key = '';
                 if ($text === Messages::get('btn_set_width')) {
-                    $settingKey = 'viewport_width';
+                    $setting_key = 'viewport_width';
                 } elseif ($text === Messages::get('btn_set_height')) {
-                    $settingKey = 'viewport_height';
+                    $setting_key = 'viewport_height';
                 } elseif ($text === Messages::get('btn_set_quality')) {
-                    $settingKey = 'image_quality';
+                    $setting_key = 'image_quality';
                 }
 
-                file_put_contents($this->getSessionFile($userId), $settingKey);
-                $allSettings = $this->settings->getAll();
-                $currentValue = $allSettings[$settingKey]['value'] ?? '';
-                $description = $allSettings[$settingKey]['description'] ?? '';
-                $this->botClient->sendMessage(
-                    $chatId,
-                    sprintf(Messages::get('enter_value'), $settingKey, $currentValue, $description)
+                file_put_contents($this->getSessionFile($user_id), $setting_key);
+                $all_settings = $this->settings->getAll();
+                $current_value = $all_settings[$setting_key]['value'] ?? '';
+                $description = $all_settings[$setting_key]['description'] ?? '';
+                $this->bot_client->sendMessage(
+                    $chat_id,
+                    sprintf(Messages::get('enter_value'), $setting_key, $current_value, $description)
                 );
                 break;
 
             case Messages::get('btn_back_to_menu'):
-                $this->botClient->sendMessage(
-                    $chatId,
+                $this->bot_client->sendMessage(
+                    $chat_id,
                     Messages::get('back_to_menu_text'),
                     KeyboardBuilder::createAdminKeyboard()
                 );
                 break;
 
             default:
-                $this->handleDefaultText($chatId, $userId, $text);
+                $this->handleDefaultText($chat_id, $user_id, $text);
         }
     }
 
-    private function handleDefaultText(string $chatId, int $userId, string $text): void
+    private function handleDefaultText(string $chat_id, int $user_id, string $text): void
     {
-        $allSettings = $this->settings->getAll();
+        $all_settings = $this->settings->getAll();
         
         // Check if selecting a setting to edit
-        if (array_key_exists($text, $allSettings)) {
-            file_put_contents($this->getSessionFile($userId), $text);
-            $responseText = sprintf(
+        if (array_key_exists($text, $all_settings)) {
+            file_put_contents($this->getSessionFile($user_id), $text);
+            $response_text = sprintf(
                 Messages::get('enter_value'),
                 $text,
-                $allSettings[$text]['value'],
-                $allSettings[$text]['description']
+                $all_settings[$text]['value'],
+                $all_settings[$text]['description']
             );
-            $this->botClient->sendMessage($chatId, $responseText);
+            $this->bot_client->sendMessage($chat_id, $response_text);
             return;
         }
 
         // Check if updating a setting
-        $sessionFile = $this->getSessionFile($userId);
-        if (file_exists($sessionFile)) {
-            $settingKey = file_get_contents($sessionFile);
-            $this->settings->update($settingKey, $text);
-            unlink($sessionFile);
+        $session_file = $this->getSessionFile($user_id);
+        if (file_exists($session_file)) {
+            $setting_key = file_get_contents($session_file);
+            $this->settings->update($setting_key, $text);
+            unlink($session_file);
 
-            $this->botClient->sendMessage(
-                $chatId,
-                sprintf(Messages::get('setting_updated'), $settingKey, $text),
+            $this->bot_client->sendMessage(
+                $chat_id,
+                sprintf(Messages::get('setting_updated'), $setting_key, $text),
                 KeyboardBuilder::createAdminKeyboard()
             );
             return;
         }
 
         // Default response
-        $this->botClient->sendMessage(
-            $chatId,
+        $this->bot_client->sendMessage(
+            $chat_id,
             Messages::get('please_select_action'),
             KeyboardBuilder::createAdminKeyboard()
         );
     }
 
-    private function getSessionFile(int $userId): string
+    private function getSessionFile(int $user_id): string
     {
-        return "session_{$userId}.txt";
+        return "session_{$user_id}.txt";
     }
 }

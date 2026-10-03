@@ -10,9 +10,9 @@ class SettingsManager
 {
     private SQLite3 $db;
 
-    public function __construct(string $dbFile)
+    public function __construct(string $db_file)
     {
-        $this->db = new SQLite3($dbFile);
+        $this->db = new SQLite3($db_file);
         $this->initialize();
     }
 
@@ -28,7 +28,7 @@ class SettingsManager
         ');
 
         // Default settings
-        $defaultSettings = [
+        $default_settings = [
             'check_url' => ['https://blog.infected.systems/status', 'URL to check'],
             'chat_id' => ['-1234567890', 'Chat ID for notifications'],
             'cache_file' => ['last_gen.txt', 'Cache file'],
@@ -42,7 +42,7 @@ class SettingsManager
         ];
 
         // Initialize missing settings
-        foreach ($defaultSettings as $key => $data) {
+        foreach ($default_settings as $key => $data) {
             $stmt = $this->db->prepare('INSERT OR IGNORE INTO settings (key, value, description) VALUES (:key, :value, :description)');
             $stmt->bindValue(':key', $key, SQLITE3_TEXT);
             $stmt->bindValue(':value', $data[0], SQLITE3_TEXT);

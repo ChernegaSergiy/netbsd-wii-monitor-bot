@@ -14,17 +14,17 @@ use App\Utils\TimeManager;
 
 class BotApplication
 {
-    private BotClient $botClient;
+    private BotClient $bot_client;
     private CommandRouter $router;
     private Checker $checker;
-    private TimeManager $timeManager;
+    private TimeManager $time_manager;
     private SettingsManager $settings;
 
-    public function __construct(string $botToken, array $adminIds, string $dbFile)
+    public function __construct(string $bot_token, array $admin_ids, string $db_file)
     {
-        $this->settings = new SettingsManager($dbFile);
-        $this->botClient = new BotClient($botToken);
-        $this->timeManager = new TimeManager($this->settings);
+        $this->settings = new SettingsManager($db_file);
+        $this->bot_client = new BotClient($bot_token);
+        $this->time_manager = new TimeManager($this->settings);
         
         $puppeteer = new PuppeteerClient($this->settings);
         $parser = new HtmlParser();
@@ -33,51 +33,51 @@ class BotApplication
             $this->settings,
             $puppeteer,
             $parser,
-            $this->timeManager,
-            $this->botClient
+            $this->time_manager,
+            $this->bot_client
         );
         
         $this->router = new CommandRouter(
-            $this->botClient,
+            $this->bot_client,
             $this->settings,
             $this->checker,
-            $adminIds
+            $admin_ids
         );
     }
 
     public function run(): void
     {
-        $updateId = 0;
+        $update_id = 0;
         
         // Initial check
-        $initialCheck = false;
-        $cacheFile = $this->settings->get('cache_file');
-        if ($cacheFile && !file_exists($cacheFile)) {
-            $initialCheck = true;
+        $initial_check = false;
+        $cache_file = $this->settings->get('cache_file');
+        if ($cache_file && !file_exists($cache_file)) {
+            $initial_check = true;
             $this->checker->processCheck();
         }
 
         while (true) {
-            $updates = $this->botClient->getUpdates($updateId + 1);
+            $updates = $this->bot_client->getUpdates($update_id + 1);
 
             if (!empty($updates['result'])) {
                 foreach ($updates['result'] as $update) {
                     $this->router->processUpdate($update);
-                    $updateId = $update['update_id'];
+                    $update_id = $update['update_id'];
                 }
             }
 
-            $sleepTime = $this->timeManager->getSleepTime(false);
+            $sleep_time = $this->time_manager->getSleepTime(false);
 
-            if ($sleepTime > 0) {
+            if ($sleep_time > 0) {
                 $start = time();
-                while (time() - $start < $sleepTime) {
-                    $updates = $this->botClient->getUpdates($updateId + 1);
+                while (time() - $start < $sleep_time) {
+                    $updates = $this->bot_client->getUpdates($update_id + 1);
 
                     if (!empty($updates['result'])) {
                         foreach ($updates['result'] as $update) {
                             $this->router->processUpdate($update);
-                            $updateId = $update['update_id'];
+                            $update_id = $update['update_id'];
                         }
                         continue;
                     }

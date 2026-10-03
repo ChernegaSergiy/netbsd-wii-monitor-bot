@@ -14,31 +14,31 @@ class Checker
     private SettingsManager $settings;
     private PuppeteerClient $puppeteer;
     private HtmlParser $parser;
-    private TimeManager $timeManager;
-    private BotClient $botClient;
+    private TimeManager $time_manager;
+    private BotClient $bot_client;
 
     public function __construct(
         SettingsManager $settings,
         PuppeteerClient $puppeteer,
         HtmlParser $parser,
-        TimeManager $timeManager,
-        BotClient $botClient
+        TimeManager $time_manager,
+        BotClient $bot_client
     ) {
         $this->settings = $settings;
         $this->puppeteer = $puppeteer;
         $this->parser = $parser;
-        $this->timeManager = $timeManager;
-        $this->botClient = $botClient;
+        $this->time_manager = $time_manager;
+        $this->bot_client = $bot_client;
     }
 
     public function processCheck(bool $force = false, int $attempt = 1): bool
     {
         echo '[ ' . date('H:i:s') . " ] Check started…\n";
 
-        $checkUrl = $this->settings->get('check_url');
-        $cacheFile = $this->settings->get('cache_file');
+        $check_url = $this->settings->get('check_url');
+        $cache_file = $this->settings->get('cache_file');
         
-        $data = $this->puppeteer->getCombinedData($checkUrl);
+        $data = $this->puppeteer->getCombinedData($check_url);
         if (! $data) {
             echo "Failed to get data from Puppeteer server.\n";
             return false;
@@ -50,21 +50,21 @@ class Checker
             return $this->processCheck($force, $attempt);
         }
 
-        $generatedOn = $this->parser->fetchGeneratedOn($data['content']);
-        if (! $generatedOn) {
+        $generated_on = $this->parser->fetchGeneratedOn($data['content']);
+        if (! $generated_on) {
             echo "Generation timestamp not found in page content.\n";
             return false;
         }
 
-        $lastGen = @file_get_contents($cacheFile);
+        $last_gen = @file_get_contents($cache_file);
 
-        if (! $force && ! $this->timeManager->isRecent($generatedOn, 30) && $generatedOn !== $lastGen) {
-            $convertedTime = $this->timeManager->convertTimezone($generatedOn);
-            echo "Generation timestamp is not recent ({$convertedTime}), retrying in 5 minutes…\n";
+        if (! $force && ! $this->time_manager->isRecent($generated_on, 30) && $generated_on !== $last_gen) {
+            $converted_time = $this->time_manager->convertTimezone($generated_on);
+            echo "Generation timestamp is not recent ({$converted_time}), retrying in 5 minutes…\n";
             return false;
         }
 
-        if ($generatedOn === $lastGen && ! $force) {
+        if ($generated_on === $last_gen && ! $force) {
             if ($attempt < 3) {
                 echo "No new generation (attempt $attempt). Waiting 30s to see if NetBSD is just slow...\n";
                 sleep(30);
@@ -75,25 +75,25 @@ class Checker
             return true;
         }
 
-        file_put_contents($cacheFile, $generatedOn);
+        file_put_contents($cache_file, $generated_on);
 
-        $convertedTime = $this->timeManager->convertTimezone($generatedOn);
-        echo "Original timestamp: {$generatedOn}\n";
-        echo "Converted timestamp: {$convertedTime}\n";
+        $converted_time = $this->time_manager->convertTimezone($generated_on);
+        echo "Original timestamp: {$generated_on}\n";
+        echo "Converted timestamp: {$converted_time}\n";
 
-        $imagePath = 'screenshot.jpg';
-        if (file_put_contents($imagePath, base64_decode($data['screenshot']))) {
+        $image_path = 'screenshot.jpg';
+        if (file_put_contents($image_path, base64_decode($data['screenshot']))) {
             $caption = sprintf(
                 "New NetBSD Wii build:\nUTC: %s\nLocal: %s",
-                $generatedOn,
-                $convertedTime
+                $generated_on,
+                $converted_time
             );
 
-            $chatId = $this->settings->get('chat_id');
-            $success = $this->botClient->sendPhoto($chatId, $imagePath, $caption);
+            $chat_id = $this->settings->get('chat_id');
+            $success = $this->bot_client->sendPhoto($chat_id, $image_path, $caption);
             
             if ($success) {
-                echo "Screenshot sent with timestamp {$convertedTime}\n";
+                echo "Screenshot sent with timestamp {$converted_time}\n";
             } else {
                 echo "Failed to send screenshot\n";
             }
@@ -105,106 +105,106 @@ class Checker
         return false;
     }
 
-    public function testCheck(string $chatId): string
+    public function testCheck(string $chat_id): string
     {
-        $initialMessageText = Messages::get('test_starting');
-        $sentMessage = $this->botClient->sendMessage($chatId, $initialMessageText);
+        $initial_message_text = Messages::get('test_starting');
+        $sent_message = $this->bot_client->sendMessage($chat_id, $initial_message_text);
 
-        $messageId = null;
-        if ($sentMessage && isset($sentMessage['result']['message_id'])) {
-            $messageId = $sentMessage['result']['message_id'];
+        $message_id = null;
+        if ($sent_message && isset($sent_message['result']['message_id'])) {
+            $message_id = $sent_message['result']['message_id'];
         } else {
-            error_log("Failed to send initial test message to chat ID: {$chatId}");
+            error_log("Failed to send initial test message to chat ID: {$chat_id}");
             return $this->performFullTestAndReturnResult();
         }
 
-        $statusUpdates = [];
-        $resultHeader = Messages::get('test_results_header');
+        $status_updates = [];
+        $result_header = Messages::get('test_results_header');
 
-        $checkUrl = $this->settings->get('check_url');
-        $data = $this->puppeteer->getCombinedData($checkUrl);
+        $check_url = $this->settings->get('check_url');
+        $data = $this->puppeteer->getCombinedData($check_url);
 
         if ($data) {
-            $statusUpdates[] = Messages::get('page_accessible');
-            $this->botClient->editMessageText($chatId, $messageId, $resultHeader . implode("\n", $statusUpdates));
+            $status_updates[] = Messages::get('page_accessible');
+            $this->bot_client->editMessageText($chat_id, $message_id, $result_header . implode("\n", $status_updates));
 
-            $generatedOn = $this->parser->fetchGeneratedOn($data['content']);
-            if ($generatedOn) {
-                $statusUpdates[] = sprintf(Messages::get('timestamp_found'), $generatedOn);
-                $this->botClient->editMessageText($chatId, $messageId, $resultHeader . implode("\n", $statusUpdates));
+            $generated_on = $this->parser->fetchGeneratedOn($data['content']);
+            if ($generated_on) {
+                $status_updates[] = sprintf(Messages::get('timestamp_found'), $generated_on);
+                $this->bot_client->editMessageText($chat_id, $message_id, $result_header . implode("\n", $status_updates));
 
-                $convertedTime = $this->timeManager->convertTimezone($generatedOn);
+                $converted_time = $this->time_manager->convertTimezone($generated_on);
 
-                if ($convertedTime !== $generatedOn &&
-                    false === strpos($convertedTime, 'conversion error') &&
-                    false === strpos($convertedTime, 'conversion failed')) {
-                    $statusUpdates[] = sprintf(Messages::get('timestamp_found'), $convertedTime);
+                if ($converted_time !== $generated_on &&
+                    false === strpos($converted_time, 'conversion error') &&
+                    false === strpos($converted_time, 'conversion failed')) {
+                    $status_updates[] = sprintf(Messages::get('timestamp_found'), $converted_time);
                 } else {
-                    $statusUpdates[] = sprintf(Messages::get('timezone_conversion_failed'), $convertedTime);
+                    $status_updates[] = sprintf(Messages::get('timezone_conversion_failed'), $converted_time);
                 }
-                $this->botClient->editMessageText($chatId, $messageId, $resultHeader . implode("\n", $statusUpdates));
+                $this->bot_client->editMessageText($chat_id, $message_id, $result_header . implode("\n", $status_updates));
             } else {
-                $statusUpdates[] = Messages::get('timestamp_not_found');
-                $this->botClient->editMessageText($chatId, $messageId, $resultHeader . implode("\n", $statusUpdates));
+                $status_updates[] = Messages::get('timestamp_not_found');
+                $this->bot_client->editMessageText($chat_id, $message_id, $result_header . implode("\n", $status_updates));
             }
 
             if (!empty($data['screenshot'])) {
-                $statusUpdates[] = Messages::get('screenshot_captured');
-                $this->botClient->editMessageText($chatId, $messageId, $resultHeader . implode("\n", $statusUpdates));
+                $status_updates[] = Messages::get('screenshot_captured');
+                $this->bot_client->editMessageText($chat_id, $message_id, $result_header . implode("\n", $status_updates));
             } else {
-                $statusUpdates[] = Messages::get('screenshot_failed');
-                $this->botClient->editMessageText($chatId, $messageId, $resultHeader . implode("\n", $statusUpdates));
+                $status_updates[] = Messages::get('screenshot_failed');
+                $this->bot_client->editMessageText($chat_id, $message_id, $result_header . implode("\n", $status_updates));
             }
         } else {
-            $statusUpdates[] = Messages::get('page_not_accessible');
-            $this->botClient->editMessageText($chatId, $messageId, $resultHeader . implode("\n", $statusUpdates));
+            $status_updates[] = Messages::get('page_not_accessible');
+            $this->bot_client->editMessageText($chat_id, $message_id, $result_header . implode("\n", $status_updates));
         }
 
-        $success = $this->botClient->sendMessage($chatId, Messages::get('test_notification_caption'));
+        $success = $this->bot_client->sendMessage($chat_id, Messages::get('test_notification_caption'));
         if ($success) {
-            $statusUpdates[] = Messages::get('test_notification_sent');
+            $status_updates[] = Messages::get('test_notification_sent');
         } else {
-            $statusUpdates[] = Messages::get('test_notification_failed');
+            $status_updates[] = Messages::get('test_notification_failed');
         }
 
-        $this->botClient->editMessageText($chatId, $messageId, $resultHeader . implode("\n", $statusUpdates));
+        $this->bot_client->editMessageText($chat_id, $message_id, $result_header . implode("\n", $status_updates));
 
-        return $resultHeader . implode("\n", $statusUpdates);
+        return $result_header . implode("\n", $status_updates);
     }
 
     private function performFullTestAndReturnResult(): string
     {
-        $statusUpdates = [];
-        $resultHeader = Messages::get('test_results_header');
+        $status_updates = [];
+        $result_header = Messages::get('test_results_header');
         
-        $checkUrl = $this->settings->get('check_url');
-        $data = $this->puppeteer->getCombinedData($checkUrl);
+        $check_url = $this->settings->get('check_url');
+        $data = $this->puppeteer->getCombinedData($check_url);
 
         if ($data) {
-            $statusUpdates[] = Messages::get('page_accessible');
-            $generatedOn = $this->parser->fetchGeneratedOn($data['content']);
-            if ($generatedOn) {
-                $statusUpdates[] = sprintf(Messages::get('timestamp_found'), $generatedOn);
-                $convertedTime = $this->timeManager->convertTimezone($generatedOn);
-                if ($convertedTime !== $generatedOn && false === strpos($convertedTime, 'conversion error')) {
-                    $statusUpdates[] = sprintf(Messages::get('timestamp_found'), $convertedTime);
+            $status_updates[] = Messages::get('page_accessible');
+            $generated_on = $this->parser->fetchGeneratedOn($data['content']);
+            if ($generated_on) {
+                $status_updates[] = sprintf(Messages::get('timestamp_found'), $generated_on);
+                $converted_time = $this->time_manager->convertTimezone($generated_on);
+                if ($converted_time !== $generated_on && false === strpos($converted_time, 'conversion error')) {
+                    $status_updates[] = sprintf(Messages::get('timestamp_found'), $converted_time);
                 } else {
-                    $statusUpdates[] = sprintf(Messages::get('timezone_conversion_failed'), $convertedTime);
+                    $status_updates[] = sprintf(Messages::get('timezone_conversion_failed'), $converted_time);
                 }
             } else {
-                $statusUpdates[] = Messages::get('timestamp_not_found');
+                $status_updates[] = Messages::get('timestamp_not_found');
             }
             if (!empty($data['screenshot'])) {
-                $statusUpdates[] = Messages::get('screenshot_captured');
+                $status_updates[] = Messages::get('screenshot_captured');
             } else {
-                $statusUpdates[] = Messages::get('screenshot_failed');
+                $status_updates[] = Messages::get('screenshot_failed');
             }
         } else {
-            $statusUpdates[] = Messages::get('page_not_accessible');
+            $status_updates[] = Messages::get('page_not_accessible');
         }
 
-        $statusUpdates[] = Messages::get('initial_message_failed_fallback');
+        $status_updates[] = Messages::get('initial_message_failed_fallback');
         
-        return $resultHeader . implode("\n", $statusUpdates);
+        return $result_header . implode("\n", $status_updates);
     }
 }

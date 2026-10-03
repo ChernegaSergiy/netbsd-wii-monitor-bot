@@ -15,24 +15,24 @@ class PuppeteerClient
         $this->settings = $settings;
     }
 
-    public function getCombinedData(string $url, int $maxRetries = 3): array|false
+    public function getCombinedData(string $url, int $max_retries = 3): array|false
     {
-        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
-            $serverUrl = $this->settings->get('puppeteer_server') ?? 'http://localhost:3000';
-            $viewportWidth = $this->settings->get('viewport_width') ?? 1280;
-            $viewportHeight = $this->settings->get('viewport_height') ?? 720;
-            $imageQuality = $this->settings->get('image_quality') ?? 80;
+        for ($attempt = 1; $attempt <= $max_retries; $attempt++) {
+            $server_url = $this->settings->get('puppeteer_server') ?? 'http://localhost:3000';
+            $viewport_width = $this->settings->get('viewport_width') ?? 1280;
+            $viewport_height = $this->settings->get('viewport_height') ?? 720;
+            $image_quality = $this->settings->get('image_quality') ?? 80;
 
             $data = [
                 'url' => $url,
                 'viewport' => [
-                    'width' => (int) $viewportWidth,
-                    'height' => (int) $viewportHeight,
-                    'quality' => (int) $imageQuality,
+                    'width' => (int) $viewport_width,
+                    'height' => (int) $viewport_height,
+                    'quality' => (int) $image_quality,
                 ],
             ];
 
-            $ch = curl_init($serverUrl . '/combined');
+            $ch = curl_init($server_url . '/combined');
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST => true,
@@ -42,20 +42,20 @@ class PuppeteerClient
             ]);
 
             $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $error = curl_error($ch);
             curl_close($ch);
 
-            if (! $error && 200 === $httpCode) {
+            if (! $error && 200 === $http_code) {
                 $result = json_decode($response, true);
                 if ($result && isset($result['content']) && isset($result['screenshot'])) {
                     return $result;
                 }
             }
 
-            error_log("Combined request attempt $attempt failed: " . ($error ?: "HTTP $httpCode"));
+            error_log("Combined request attempt $attempt failed: " . ($error ?: "HTTP $http_code"));
 
-            if ($attempt < $maxRetries) {
+            if ($attempt < $max_retries) {
                 sleep(10); // Wait 10 seconds before retrying
             }
         }

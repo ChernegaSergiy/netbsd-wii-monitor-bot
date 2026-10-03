@@ -26,15 +26,15 @@ class HtmlParser
 
     public function isScreenshotComplete(string $content): bool
     {
-        $topStart = strpos($content, '=== top ===');
+        $top_start = strpos($content, '=== top ===');
 
-        if (false === $topStart) {
+        if (false === $top_start) {
             return false;
         }
 
-        $topSectionContent = substr($content, $topStart);
+        $top_section_content = substr($content, $top_start);
 
-        if (false === strpos($topSectionContent, 'load averages:')) {
+        if (false === strpos($top_section_content, 'load averages:')) {
             return false;
         }
 

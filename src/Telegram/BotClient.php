@@ -8,16 +8,16 @@ use CURLFile;
 
 class BotClient
 {
-    private string $botToken;
+    private string $bot_token;
 
-    public function __construct(string $botToken)
+    public function __construct(string $bot_token)
     {
-        $this->botToken = $botToken;
+        $this->bot_token = $bot_token;
     }
 
     public function getUpdates(int $offset): array
     {
-        $url = "https://api.telegram.org/bot{$this->botToken}/getUpdates?offset={$offset}&timeout=30";
+        $url = "https://api.telegram.org/bot{$this->bot_token}/getUpdates?offset={$offset}&timeout=30";
 
         $ch = curl_init($url);
         curl_setopt_array($ch, [
@@ -40,24 +40,24 @@ class BotClient
         return json_decode($response, true) ?? [];
     }
 
-    public function sendMessage(string $chatId, string $text, ?array $keyboard = null): array|false
+    public function sendMessage(string $chat_id, string $text, ?array $keyboard = null): array|false
     {
-        $url = "https://api.telegram.org/bot{$this->botToken}/sendMessage";
+        $url = "https://api.telegram.org/bot{$this->bot_token}/sendMessage";
 
-        $postData = [
-            'chat_id' => $chatId,
+        $post_data = [
+            'chat_id' => $chat_id,
             'text' => $text,
             'parse_mode' => 'HTML',
         ];
 
         if (null !== $keyboard) {
-            $postData['reply_markup'] = json_encode($keyboard);
+            $post_data['reply_markup'] = json_encode($keyboard);
         }
 
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => http_build_query($postData),
+            CURLOPT_POSTFIELDS => http_build_query($post_data),
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_TIMEOUT => 10,
@@ -75,9 +75,9 @@ class BotClient
         return json_decode($response, true) ?? false;
     }
 
-    public function sendPhoto(string $chatId, string $imagePath, string $caption): bool
+    public function sendPhoto(string $chat_id, string $image_path, string $caption): bool
     {
-        $url = "https://api.telegram.org/bot{$this->botToken}/sendPhoto";
+        $url = "https://api.telegram.org/bot{$this->bot_token}/sendPhoto";
         $ch = curl_init();
 
         curl_setopt_array($ch, [
@@ -85,8 +85,8 @@ class BotClient
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => [
-                'chat_id' => $chatId,
-                'photo' => new CURLFile($imagePath),
+                'chat_id' => $chat_id,
+                'photo' => new CURLFile($image_path),
                 'caption' => $caption,
                 'parse_mode' => 'HTML',
             ],
@@ -95,36 +95,36 @@ class BotClient
 
         $response = curl_exec($ch);
         $error = curl_error($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        if ($error || $httpCode !== 200) {
-            error_log("Telegram send photo error: $error (HTTP $httpCode) - Response: " . ($response ?: 'none'));
+        if ($error || $http_code !== 200) {
+            error_log("Telegram send photo error: $error (HTTP $http_code) - Response: " . ($response ?: 'none'));
             return false;
         }
 
         return true;
     }
 
-    public function editMessageText(string $chatId, int $messageId, string $text, ?array $keyboard = null): array|false
+    public function editMessageText(string $chat_id, int $message_id, string $text, ?array $keyboard = null): array|false
     {
-        $url = "https://api.telegram.org/bot{$this->botToken}/editMessageText";
+        $url = "https://api.telegram.org/bot{$this->bot_token}/editMessageText";
 
-        $postData = [
-            'chat_id' => $chatId,
-            'message_id' => $messageId,
+        $post_data = [
+            'chat_id' => $chat_id,
+            'message_id' => $message_id,
             'text' => $text,
             'parse_mode' => 'HTML',
         ];
 
         if (null !== $keyboard) {
-            $postData['reply_markup'] = $keyboard;
+            $post_data['reply_markup'] = $keyboard;
         }
 
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => json_encode($postData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            CURLOPT_POSTFIELDS => json_encode($post_data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
             CURLOPT_TIMEOUT => 10,
