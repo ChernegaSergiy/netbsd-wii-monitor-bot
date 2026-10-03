@@ -67,7 +67,12 @@ class BotApplication
                 }
             }
 
-            $sleep_time = $this->time_manager->getSleepTime(false);
+            try {
+                $sleep_time = $this->time_manager->getSleepTime(false);
+            } catch (\App\Exceptions\ConfigurationException $e) {
+                $sleep_time = 1800;
+                echo "Configuration Error: " . $e->getMessage() . ". Using default 1800s.\n";
+            }
 
             if ($sleep_time > 0) {
                 $start = time();
