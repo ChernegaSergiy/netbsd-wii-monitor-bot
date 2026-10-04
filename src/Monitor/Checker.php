@@ -8,6 +8,7 @@ use App\Config\SettingsManager;
 use App\Constants\Messages;
 use App\Telegram\BotClient;
 use App\Utils\TimeManager;
+use Psr\Log\LoggerInterface;
 
 class Checker
 {
@@ -16,19 +17,22 @@ class Checker
     private HtmlParser $parser;
     private TimeManager $time_manager;
     private BotClient $bot_client;
+    private LoggerInterface $logger;
 
     public function __construct(
         SettingsManager $settings,
         PuppeteerClient $puppeteer,
         HtmlParser $parser,
         TimeManager $time_manager,
-        BotClient $bot_client
+        BotClient $bot_client,
+        LoggerInterface $logger
     ) {
         $this->settings = $settings;
         $this->puppeteer = $puppeteer;
         $this->parser = $parser;
         $this->time_manager = $time_manager;
         $this->bot_client = $bot_client;
+        $this->logger = $logger;
     }
 
     public function processCheck(bool $force = false, int $attempt = 1) : bool
@@ -40,19 +44,19 @@ class Checker
 
         $data = $this->puppeteer->getCombinedData($check_url);
         if (! $data) {
-            echo "Failed to get data from Puppeteer server.\n";
+            $this->logger->error("Failed to get data from Puppeteer server.");
             return false;
         }
 
         if (! $this->parser->isScreenshotComplete($data['content'])) {
-            echo "Screenshot is incomplete, scheduling retry in 1 minute…\n";
+            $this->logger->warning("Screenshot is incomplete, scheduling retry in 1 minute…");
             sleep(60);
             return $this->processCheck($force, $attempt);
         }
 
         $generated_on = $this->parser->fetchGeneratedOn($data['content']);
         if (! $generated_on) {
-            echo "Generation timestamp not found in page content.\n";
+            $this->logger->error("Generation timestamp not found in page content.");
             return false;
         }
 
@@ -60,26 +64,26 @@ class Checker
 
         if (! $force && ! $this->time_manager->isRecent($generated_on, 30) && $generated_on !== $last_gen) {
             $converted_time = $this->time_manager->convertTimezone($generated_on);
-            echo "Generation timestamp is not recent ({$converted_time}), retrying in 5 minutes…\n";
+            $this->logger->info("Generation timestamp is not recent ({$converted_time}), retrying in 5 minutes…");
             return false;
         }
 
         if ($generated_on === $last_gen && ! $force) {
             if ($attempt < 3) {
-                echo "No new generation (attempt $attempt). Waiting 30s to see if NetBSD is just slow...\n";
+                $this->logger->info("No new generation (attempt $attempt). Waiting 30s to see if NetBSD is just slow...");
                 sleep(30);
                 return $this->processCheck($force, $attempt + 1);
             }
 
-            echo "No new generation after 3 attempts.\n";
+            $this->logger->info("No new generation after 3 attempts.");
             return true;
         }
 
         file_put_contents($cache_file, $generated_on);
 
         $converted_time = $this->time_manager->convertTimezone($generated_on);
-        echo "Original timestamp: {$generated_on}\n";
-        echo "Converted timestamp: {$converted_time}\n";
+        $this->logger->info("Original timestamp: {$generated_on}");
+        $this->logger->info("Converted timestamp: {$converted_time}");
 
         $image_path = 'screenshot.jpg';
         if (file_put_contents($image_path, base64_decode($data['screenshot']))) {
@@ -93,15 +97,15 @@ class Checker
             $success = $this->bot_client->sendPhoto($chat_id, $image_path, $caption);
 
             if ($success) {
-                echo "Screenshot sent with timestamp {$converted_time}\n";
+                $this->logger->info("Screenshot sent with timestamp {$converted_time}");
             } else {
-                echo "Failed to send screenshot\n";
+                $this->logger->error("Failed to send screenshot");
             }
 
             return $success;
         }
 
-        echo "Failed to save screenshot.\n";
+        $this->logger->error("Failed to save screenshot.");
         return false;
     }
 
@@ -114,7 +118,7 @@ class Checker
         if ($sent_message && isset($sent_message['result']['message_id'])) {
             $message_id = $sent_message['result']['message_id'];
         } else {
-            error_log("Failed to send initial test message to chat ID: {$chat_id}");
+            $this->logger->error("Failed to send initial test message to chat ID: {$chat_id}");
             return $this->performFullTestAndReturnResult();
         }
 

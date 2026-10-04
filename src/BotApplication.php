@@ -10,7 +10,9 @@ use App\Monitor\HtmlParser;
 use App\Monitor\PuppeteerClient;
 use App\Telegram\BotClient;
 use App\Telegram\CommandRouter;
+use App\Utils\LoggerFactory;
 use App\Utils\TimeManager;
+use Psr\Log\LoggerInterface;
 
 class BotApplication
 {
@@ -19,14 +21,16 @@ class BotApplication
     private Checker $checker;
     private TimeManager $time_manager;
     private SettingsManager $settings;
+    private LoggerInterface $logger;
 
     public function __construct(string $bot_token, array $admin_ids, string $db_file)
     {
+        $this->logger = LoggerFactory::create('wiim-bot');
         $this->settings = new SettingsManager($db_file);
-        $this->bot_client = new BotClient($bot_token);
-        $this->time_manager = new TimeManager($this->settings);
+        $this->bot_client = new BotClient($bot_token, $this->logger);
+        $this->time_manager = new TimeManager($this->settings, $this->logger);
 
-        $puppeteer = new PuppeteerClient($this->settings);
+        $puppeteer = new PuppeteerClient($this->settings, $this->logger);
         $parser = new HtmlParser();
 
         $this->checker = new Checker(
@@ -34,7 +38,8 @@ class BotApplication
             $puppeteer,
             $parser,
             $this->time_manager,
-            $this->bot_client
+            $this->bot_client,
+            $this->logger
         );
 
         $this->router = new CommandRouter(
@@ -71,7 +76,7 @@ class BotApplication
                 $sleep_time = $this->time_manager->getSleepTime(false);
             } catch (\App\Exceptions\ConfigurationException $e) {
                 $sleep_time = 1800;
-                echo "Configuration Error: " . $e->getMessage() . ". Using default 1800s.\n";
+                $this->logger->error("Configuration Error: " . $e->getMessage() . ". Using default 1800s.");
             }
 
             if ($sleep_time > 0) {
@@ -79,7 +84,7 @@ class BotApplication
                 while (time() - $start < $sleep_time) {
                     $remaining = $sleep_time - (time() - $start);
                     $timeout = min(30, $remaining);
-                    
+
                     $updates = $this->bot_client->getUpdates($update_id + 1, $timeout);
 
                     if (!empty($updates['result'])) {
