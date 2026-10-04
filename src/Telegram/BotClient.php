@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace App\Telegram;
 
 use CURLFile;
+use Psr\Log\LoggerInterface;
 
 class BotClient
 {
     private string $bot_token;
+    private LoggerInterface $logger;
 
-    public function __construct(string $bot_token)
+    public function __construct(string $bot_token, LoggerInterface $logger)
     {
         $this->bot_token = $bot_token;
+        $this->logger = $logger;
     }
 
     public function getUpdates(int $offset, int $timeout = 30) : array
@@ -33,7 +36,7 @@ class BotClient
         curl_close($ch);
 
         if ($error) {
-            error_log("Telegram API error: $error");
+            $this->logger->error("Telegram API error: $error");
             return [];
         }
 
@@ -68,7 +71,7 @@ class BotClient
         curl_close($ch);
 
         if ($error) {
-            error_log("Telegram send message error: $error");
+            $this->logger->error("Telegram send message error: $error");
             return false;
         }
 
@@ -99,7 +102,7 @@ class BotClient
         curl_close($ch);
 
         if ($error || 200 !== $http_code) {
-            error_log("Telegram send photo error: $error (HTTP $http_code) - Response: " . ($response ?: 'none'));
+            $this->logger->error("Telegram send photo error: $error (HTTP $http_code) - Response: " . ($response ?: 'none'));
             return false;
         }
 
@@ -135,7 +138,7 @@ class BotClient
         curl_close($ch);
 
         if ($error) {
-            error_log("Telegram edit message error: $error");
+            $this->logger->error("Telegram edit message error: $error");
             return false;
         }
 

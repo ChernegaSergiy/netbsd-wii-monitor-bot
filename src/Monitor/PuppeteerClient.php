@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace App\Monitor;
 
 use App\Config\SettingsManager;
+use Psr\Log\LoggerInterface;
 
 class PuppeteerClient
 {
     private SettingsManager $settings;
+    private LoggerInterface $logger;
 
-    public function __construct(SettingsManager $settings)
+    public function __construct(SettingsManager $settings, LoggerInterface $logger)
     {
         $this->settings = $settings;
+        $this->logger = $logger;
     }
 
     public function getCombinedData(string $url, int $max_retries = 3) : array|false
@@ -53,7 +56,7 @@ class PuppeteerClient
                 }
             }
 
-            error_log("Combined request attempt $attempt failed: " . ($error ?: "HTTP $http_code"));
+            $this->logger->error("Combined request attempt $attempt failed: " . ($error ?: "HTTP $http_code"));
 
             if ($attempt < $max_retries) {
                 sleep(10); // Wait 10 seconds before retrying
