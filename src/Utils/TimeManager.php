@@ -8,14 +8,17 @@ use App\Config\SettingsManager;
 use DateTime;
 use DateTimeZone;
 use Exception;
+use Psr\Log\LoggerInterface;
 
 class TimeManager
 {
     private SettingsManager $settings;
+    private LoggerInterface $logger;
 
-    public function __construct(SettingsManager $settings)
+    public function __construct(SettingsManager $settings, LoggerInterface $logger)
     {
         $this->settings = $settings;
+        $this->logger = $logger;
     }
 
     public function convertTimezone(string $timestamp_str) : string
@@ -46,7 +49,7 @@ class TimeManager
             }
 
             if (! $datetime) {
-                error_log("Failed to parse timestamp: $timestamp_str");
+                $this->logger->error("Failed to parse timestamp: $timestamp_str");
                 return $timestamp_str . ' (conversion failed)';
             }
 
@@ -54,7 +57,7 @@ class TimeManager
 
             return $datetime->format('Y-m-d H:i:s') . " ({$to_tz})";
         } catch (Exception $e) {
-            error_log('Timezone conversion error: ' . $e->getMessage());
+            $this->logger->error('Timezone conversion error: ' . $e->getMessage());
             return $timestamp_str . ' (conversion error)';
         }
     }
