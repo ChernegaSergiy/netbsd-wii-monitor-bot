@@ -81,7 +81,7 @@ class TimeManager
     {
         if ($initial_check) {
             $cache_file = $this->settings->get('cache_file');
-            if ($cache_file && !file_exists($cache_file)) {
+            if ($cache_file && ! file_exists($cache_file)) {
                 return 0;
             }
         }

@@ -29,7 +29,7 @@ class CommandRouter
 
     public function processUpdate(array $update) : void
     {
-        if (!isset($update['message'])) {
+        if (! isset($update['message'])) {
             return;
         }
 
@@ -51,7 +51,7 @@ class CommandRouter
             return;
         }
 
-        if (!$this->isAdmin($user_id)) {
+        if (! $this->isAdmin($user_id)) {
             $this->bot_client->sendMessage((string) $chat_id, Messages::get('no_access'));
             return;
         }

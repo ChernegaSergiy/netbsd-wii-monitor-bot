@@ -28,7 +28,7 @@ $admin_ids_str = getenv('ADMIN_IDS');
 $admin_ids = $admin_ids_str ? array_map('intval', explode(',', $admin_ids_str)) : [];
 $db_file = getenv('DB_FILE') ?: 'bot_config.db';
 
-if (!$bot_token || empty($admin_ids)) {
+if (! $bot_token || empty($admin_ids)) {
     exit("Error! Missing required configuration variables (BOT_TOKEN or ADMIN_IDS).\n");
 }
 

@@ -152,7 +152,7 @@ class Checker
                 $this->bot_client->editMessageText($chat_id, $message_id, $result_header . implode("\n", $status_updates));
             }
 
-            if (!empty($data['screenshot'])) {
+            if (! empty($data['screenshot'])) {
                 $status_updates[] = Messages::get('screenshot_captured');
                 $this->bot_client->editMessageText($chat_id, $message_id, $result_header . implode("\n", $status_updates));
 
@@ -213,7 +213,7 @@ class Checker
             } else {
                 $status_updates[] = Messages::get('timestamp_not_found');
             }
-            if (!empty($data['screenshot'])) {
+            if (! empty($data['screenshot'])) {
                 $status_updates[] = Messages::get('screenshot_captured');
             } else {
                 $status_updates[] = Messages::get('screenshot_failed');

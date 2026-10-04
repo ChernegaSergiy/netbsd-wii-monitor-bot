@@ -57,7 +57,7 @@ class BotApplication
         // Initial check
         $initial_check = false;
         $cache_file = $this->settings->get('cache_file');
-        if ($cache_file && !file_exists($cache_file)) {
+        if ($cache_file && ! file_exists($cache_file)) {
             $initial_check = true;
             $this->checker->processCheck();
         }
@@ -65,7 +65,7 @@ class BotApplication
         while (true) {
             $updates = $this->bot_client->getUpdates($update_id + 1);
 
-            if (!empty($updates['result'])) {
+            if (! empty($updates['result'])) {
                 foreach ($updates['result'] as $update) {
                     $this->router->processUpdate($update);
                     $update_id = $update['update_id'];
@@ -87,7 +87,7 @@ class BotApplication
 
                     $updates = $this->bot_client->getUpdates($update_id + 1, $timeout);
 
-                    if (!empty($updates['result'])) {
+                    if (! empty($updates['result'])) {
                         foreach ($updates['result'] as $update) {
                             $this->router->processUpdate($update);
                             $update_id = $update['update_id'];
